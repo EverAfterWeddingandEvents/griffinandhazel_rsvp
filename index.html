@@ -364,6 +364,33 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 300; margin: 0; letter-spac
   margin-bottom: .1rem;
 }
 
+/* Days · Hours · Minutes · Seconds, ticking every second. */
+.countdown__units {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 1.4rem;
+}
+/* A fixed width and lining figures keep the row from twitching sideways
+   every time the seconds digit changes width. */
+.countdown__unit {
+  min-width: 3.1rem;
+}
+.countdown__unit strong {
+  font-size: 2rem;
+  margin-bottom: .3rem;
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
+}
+.countdown__unit span {
+  display: block;
+  font-size: .58rem;
+  letter-spacing: .2em;
+}
+.countdown__caption {
+  margin-top: .95rem;
+}
+
 .scroll-cue {
   display: block;
   margin-top: 2rem;
@@ -905,6 +932,14 @@ input:focus, select:focus, textarea:focus {
   .form-card { padding: 2.2rem 1.4rem 2rem; }
 }
 
+/* Four cells plus their gaps have to clear a 320px screen, so tighten both. */
+@media (max-width: 400px) {
+  .countdown__units { gap: .7rem; }
+  .countdown__unit { min-width: 2.7rem; }
+  .countdown__unit strong { font-size: 1.7rem; }
+  .countdown__unit span { font-size: .52rem; letter-spacing: .14em; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
@@ -1241,24 +1276,106 @@ input:focus, select:focus, textarea:focus {
   }
 
 
-  function renderCountdown() {
+  /* ---------------------------------------------------------------------- */
+  /*  Countdown                                                             */
+  /*                                                                        */
+  /*  Ticks every second down to midnight on the wedding day. The cells are  */
+  /*  built once and only their numbers are rewritten, so the entrance       */
+  /*  animation can hold them without fighting the interval.                 */
+  /* ---------------------------------------------------------------------- */
+
+  var COUNTDOWN_UNITS = [
+    { key: 'days', label: 'Days' },
+    { key: 'hours', label: 'Hours' },
+    { key: 'minutes', label: 'Minutes' },
+    { key: 'seconds', label: 'Seconds' }
+  ];
+
+  var countdownCells = null;   // unit key -> the <strong> holding its number
+  var countdownTimer = null;
+  var countdownHeld = false;   // true while countUp() owns the numbers
+  var countdownValues = { days: 0, hours: 0, minutes: 0, seconds: 0 };
+
+  function weddingMoment() {
     var parts = CONFIG.weddingDateIso.split('-');
-    var wedding = new Date(+parts[0], +parts[1] - 1, +parts[2]);
-    var today = new Date();
-    today.setHours(0, 0, 0, 0);
+    return new Date(+parts[0], +parts[1] - 1, +parts[2]);
+  }
 
-    var days = Math.round((wedding - today) / 86400000);
+  function pad2(n) {
+    return (n < 10 ? '0' : '') + n;
+  }
+
+  function renderCountdown() {
     var el = $('countdown');
-
-    if (days > 1) {
-      el.innerHTML = '<strong>' + days + '</strong> days until we say I do';
-    } else if (days === 1) {
-      el.innerHTML = '<strong>Tomorrow</strong>';
-    } else if (days === 0) {
-      el.innerHTML = '<strong>Today</strong> is the day';
-    } else {
-      el.innerHTML = '<strong>' + esc(CONFIG.weddingYear) + '</strong>';
+    if (weddingMoment() - new Date() <= 0) {
+      paintCountdownMessage(el);
+      return;
     }
+
+    var html = '<div class="countdown__units">';
+    for (var i = 0; i < COUNTDOWN_UNITS.length; i++) {
+      html += '<div class="countdown__unit">' +
+                '<strong data-unit="' + COUNTDOWN_UNITS[i].key + '">0</strong>' +
+                '<span>' + COUNTDOWN_UNITS[i].label + '</span>' +
+              '</div>';
+    }
+    el.innerHTML = html + '</div><p class="countdown__caption">until we say I do</p>';
+
+    countdownCells = {};
+    for (var j = 0; j < COUNTDOWN_UNITS.length; j++) {
+      var key = COUNTDOWN_UNITS[j].key;
+      countdownCells[key] = el.querySelector('[data-unit="' + key + '"]');
+    }
+
+    tickCountdown();
+    countdownTimer = setInterval(tickCountdown, 1000);
+  }
+
+  function tickCountdown() {
+    var remaining = weddingMoment() - new Date();
+
+    if (remaining <= 0) {
+      clearInterval(countdownTimer);
+      countdownTimer = null;
+      countdownCells = null;
+      paintCountdownMessage($('countdown'));
+      return;
+    }
+
+    var total = Math.floor(remaining / 1000);
+    countdownValues = {
+      days: Math.floor(total / 86400),
+      hours: Math.floor(total / 3600) % 24,
+      minutes: Math.floor(total / 60) % 60,
+      seconds: total % 60
+    };
+
+    if (!countdownHeld) {
+      paintCountdown(countdownValues);
+    }
+  }
+
+  function paintCountdown(v) {
+    if (!countdownCells) {
+      return;
+    }
+    for (var i = 0; i < COUNTDOWN_UNITS.length; i++) {
+      var key = COUNTDOWN_UNITS[i].key;
+      var cell = countdownCells[key];
+      // Days is the only one that can run past two digits, so it stays bare.
+      var text = key === 'days' ? String(v[key]) : pad2(v[key]);
+      if (cell && cell.textContent !== text) {
+        cell.textContent = text;
+      }
+    }
+  }
+
+  /** The day itself, and everything after it. */
+  function paintCountdownMessage(el) {
+    var since = new Date() - weddingMoment();
+    el.innerHTML = since < 86400000
+      ? '<strong>Today</strong> is the day'
+      : '<strong>' + esc(CONFIG.weddingYear) + '</strong>';
   }
 
 
@@ -1451,19 +1568,36 @@ input:focus, select:focus, textarea:focus {
   }
 
 
-  /** Runs the countdown number up from zero rather than just appearing. */
+  /** Runs every countdown number up from zero rather than just appearing. */
   function countUp() {
-    var strong = document.querySelector('#countdown strong');
-    var target = parseInt(strong && strong.textContent, 10);
-    if (!strong || isNaN(target) || target < 2) {
+    if (!countdownCells) {
       return;
     }
-    var counter = { v: 0 };
-    gsap.to(counter, {
-      v: target,
+
+    // The interval keeps computing while this runs; countdownHeld stops it
+    // repainting over the tween, and onComplete hands the numbers back.
+    countdownHeld = true;
+
+    var proxy = { days: 0, hours: 0, minutes: 0, seconds: 0 };
+    gsap.to(proxy, {
+      days: countdownValues.days,
+      hours: countdownValues.hours,
+      minutes: countdownValues.minutes,
+      seconds: countdownValues.seconds,
       duration: 1.6,
       ease: 'power2.out',
-      onUpdate: function () { strong.textContent = Math.round(counter.v); }
+      onUpdate: function () {
+        paintCountdown({
+          days: Math.round(proxy.days),
+          hours: Math.round(proxy.hours),
+          minutes: Math.round(proxy.minutes),
+          seconds: Math.round(proxy.seconds)
+        });
+      },
+      onComplete: function () {
+        countdownHeld = false;
+        paintCountdown(countdownValues);
+      }
     });
   }
 

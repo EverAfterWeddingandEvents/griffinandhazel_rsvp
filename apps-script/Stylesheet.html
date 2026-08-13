@@ -278,6 +278,33 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 300; margin: 0; letter-spac
   margin-bottom: .1rem;
 }
 
+/* Days · Hours · Minutes · Seconds, ticking every second. */
+.countdown__units {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 1.4rem;
+}
+/* A fixed width and lining figures keep the row from twitching sideways
+   every time the seconds digit changes width. */
+.countdown__unit {
+  min-width: 3.1rem;
+}
+.countdown__unit strong {
+  font-size: 2rem;
+  margin-bottom: .3rem;
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
+}
+.countdown__unit span {
+  display: block;
+  font-size: .58rem;
+  letter-spacing: .2em;
+}
+.countdown__caption {
+  margin-top: .95rem;
+}
+
 .scroll-cue {
   display: block;
   margin-top: 2rem;
@@ -817,6 +844,14 @@ input:focus, select:focus, textarea:focus {
   .hero__photo { aspect-ratio: 1 / 1; max-height: 54vh; background-position: 50% 14%; }
   .section { padding: 3.2rem 1.25rem; }
   .form-card { padding: 2.2rem 1.4rem 2rem; }
+}
+
+/* Four cells plus their gaps have to clear a 320px screen, so tighten both. */
+@media (max-width: 400px) {
+  .countdown__units { gap: .7rem; }
+  .countdown__unit { min-width: 2.7rem; }
+  .countdown__unit strong { font-size: 1.7rem; }
+  .countdown__unit span { font-size: .52rem; letter-spacing: .14em; }
 }
 
 @media (prefers-reduced-motion: reduce) {
