@@ -33,7 +33,7 @@ BUILD = os.path.join(ROOT, "build")
 PUBLIC_KEYS = (
     "groom", "bride", "monogram", "weddingDateIso", "weddingDateLong",
     "weddingYear", "weddingDateShort", "ceremony", "reception",
-    "rsvpDeadlineIso", "rsvpDeadlineLabel", "maxPartySize", "askForPhone",
+    "rsvpDeadlineIso", "rsvpDeadlineLabel", "maxPartySize",
     "invitationLine", "requestLine", "closingNote",
 )
 

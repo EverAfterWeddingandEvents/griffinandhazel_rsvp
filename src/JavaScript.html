@@ -117,10 +117,6 @@
       select.appendChild(opt);
     }
 
-    if (!CONFIG.askForPhone) {
-      $('f-phone').style.display = 'none';
-    }
-
     if (!rsvpIsOpen()) {
       $('formPane').style.display = 'none';
       $('closedPane').style.display = 'block';
@@ -156,7 +152,7 @@
   /* ---------------------------------------------------------------------- */
 
   function clearErrors() {
-    ['name', 'email', 'phone', 'attending', 'partySize'].forEach(function (f) {
+    ['name', 'attending', 'partySize'].forEach(function (f) {
       var wrap = $('f-' + f);
       if (wrap) { wrap.classList.remove('field--error'); }
     });
@@ -217,8 +213,6 @@
 
     var payload = {
       name: $('name').value,
-      email: $('email').value,
-      phone: CONFIG.askForPhone ? $('phone').value : '',
       attending: attendingValue(),
       partySize: $('partySize').value,
       guestNames: $('guestNames').value,
@@ -229,9 +223,6 @@
     // Cheap client-side checks first, so the round trip is not wasted
     if (payload.name.trim().length < 2) {
       return showFieldError('name', 'Please tell us your full name.');
-    }
-    if (payload.email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(payload.email.trim())) {
-      return showFieldError('email', 'That email address does not look quite right.');
     }
     if (!payload.attending) {
       return showFieldError('attending', 'Please choose one so we know to save you a seat.');

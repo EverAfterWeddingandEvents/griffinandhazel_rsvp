@@ -11,8 +11,6 @@ var HEADERS = [
   'Timestamp',
   'Last Updated',
   'Full Name',
-  'Email',
-  'Phone',
   'Attending',
   'Party Size',
   'Guest Names',
@@ -24,13 +22,11 @@ var COL = {
   timestamp: 1,
   updated: 2,
   name: 3,
-  email: 4,
-  phone: 5,
-  attending: 6,
-  partySize: 7,
-  guestNames: 8,
-  message: 9,
-  code: 10
+  attending: 4,
+  partySize: 5,
+  guestNames: 6,
+  message: 7,
+  code: 8
 };
 
 
@@ -65,8 +61,7 @@ function include(filename) {
 /**
  * Called by google.script.run when the form is served by Apps Script itself.
  *
- * @param {Object} payload  { name, email, phone, attending, partySize,
- *                            guestNames, message }
+ * @param {Object} payload  { name, attending, partySize, guestNames, message }
  * @return {Object}         { ok: true, code, name, attending, updated }
  *                          or { ok: false, error, field }
  */
@@ -141,8 +136,6 @@ function handleRsvp_(payload) {
       row[COL.timestamp - 1] = now;
       row[COL.updated - 1] = isUpdate ? now : '';
       row[COL.name - 1] = clean.name;
-      row[COL.email - 1] = clean.email;
-      row[COL.phone - 1] = clean.phone;
       row[COL.attending - 1] = clean.attending ? 'Yes' : 'No';
       row[COL.partySize - 1] = clean.partySize;
       row[COL.guestNames - 1] = clean.guestNames;
@@ -192,16 +185,6 @@ function validate_(p) {
     return fail_('That name is a little too long for our sheet.', 'name');
   }
 
-  var email = trim_(p.email).toLowerCase();
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
-    return fail_('That email address does not look quite right.', 'email');
-  }
-  if (email.length > 120) {
-    return fail_('That email address is too long.', 'email');
-  }
-
-  var phone = trim_(p.phone).slice(0, 40);
-
   if (p.attending !== 'yes' && p.attending !== 'no') {
     return fail_('Please let us know whether you can join us.', 'attending');
   }
@@ -224,8 +207,6 @@ function validate_(p) {
 
   return {
     name: name,
-    email: email,
-    phone: phone,
     attending: attending,
     partySize: partySize,
     guestNames: guestNames,
@@ -261,7 +242,10 @@ function getRsvpSheet_() {
 
 /**
  * Finds a previous RSVP from the same person so guests can change their answer.
- * Matches on email when one was given, otherwise on the normalised name.
+ *
+ * Name is all we collect, so that is what we match on: two guests who share a
+ * name would overwrite each other. Set CONFIG.allowEdits to false if you would
+ * rather keep every submission and sort duplicates out by hand.
  */
 function findExistingRow_(sheet, clean) {
   var lastRow = sheet.getLastRow();
@@ -270,18 +254,11 @@ function findExistingRow_(sheet, clean) {
   }
 
   var values = sheet.getRange(2, 1, lastRow - 1, HEADERS.length).getValues();
-  var wantedEmail = clean.email;
   var wantedName = normalizeName_(clean.name);
 
   for (var i = values.length - 1; i >= 0; i--) {
-    var rowEmail = String(values[i][COL.email - 1] || '').trim().toLowerCase();
     var rowName = normalizeName_(values[i][COL.name - 1]);
-
-    if (wantedEmail) {
-      if (rowEmail === wantedEmail) {
-        return i + 2;
-      }
-    } else if (!rowEmail && rowName && rowName === wantedName) {
+    if (rowName && rowName === wantedName) {
       return i + 2;
     }
   }

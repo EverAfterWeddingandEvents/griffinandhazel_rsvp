@@ -42,9 +42,8 @@ var CONFIG = {
 
   // ---- Form behaviour -------------------------------------------------------
   maxPartySize: 10,          // largest number of seats one submission may claim
-  askForPhone: true,         // set false to hide the phone number field
-  allowEdits: true,          // re-submitting with the same name/email updates the
-                             // existing row instead of creating a duplicate
+  allowEdits: true,          // re-submitting under the same name updates that
+                             // guest's row instead of adding a duplicate
 
   // ---- Spreadsheet ----------------------------------------------------------
   sheetName: 'RSVPs',
@@ -77,7 +76,6 @@ function getPublicConfig_() {
     rsvpDeadlineIso: CONFIG.rsvpDeadlineIso,
     rsvpDeadlineLabel: CONFIG.rsvpDeadlineLabel,
     maxPartySize: CONFIG.maxPartySize,
-    askForPhone: CONFIG.askForPhone,
     invitationLine: CONFIG.invitationLine,
     requestLine: CONFIG.requestLine,
     closingNote: CONFIG.closingNote,

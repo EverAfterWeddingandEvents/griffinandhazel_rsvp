@@ -70,7 +70,7 @@ function formatRsvpSheet_(sheet) {
   sheet.setFrozenRows(1);
 
   // Column widths
-  var widths = [150, 150, 210, 230, 140, 100, 95, 260, 380, 130];
+  var widths = [150, 150, 230, 100, 95, 280, 400, 130];
   for (var i = 0; i < widths.length; i++) {
     sheet.setColumnWidth(i + 1, widths[i]);
   }
@@ -132,12 +132,19 @@ function buildSummarySheet_(ss) {
   sheet.getRange('B3').setValue(CONFIG.weddingDateShort + '  ·  ' + CONFIG.ceremony.city)
     .setFontFamily('Georgia').setFontSize(11).setFontColor('#8B7A69');
 
+  // Derived from COL rather than hard-coded, so adding or removing a field
+  // cannot quietly point these formulas at the wrong column.
+  var name = colRange_(COL.name);
+  var attending = colRange_(COL.attending);
+  var seats = colRange_(COL.partySize);
+  var message = colRange_(COL.message);
+
   var rows = [
-    ['Responses received', '=COUNTA(' + q + '!C2:C)'],
-    ['Joyfully accepting', '=COUNTIF(' + q + '!F2:F,"Yes")'],
-    ['Regretfully declining', '=COUNTIF(' + q + '!F2:F,"No")'],
-    ['Total seats confirmed', '=SUM(' + q + '!G2:G)'],
-    ['Messages left for the couple', '=COUNTA(' + q + '!I2:I)'],
+    ['Responses received', '=COUNTA(' + q + '!' + name + ')'],
+    ['Joyfully accepting', '=COUNTIF(' + q + '!' + attending + ',"Yes")'],
+    ['Regretfully declining', '=COUNTIF(' + q + '!' + attending + ',"No")'],
+    ['Total seats confirmed', '=SUM(' + q + '!' + seats + ')'],
+    ['Messages left for the couple', '=COUNTA(' + q + '!' + message + ')'],
     ['RSVP deadline', CONFIG.rsvpDeadlineLabel],
     ['Days until the wedding', '=MAX(0, DATE(' +
       CONFIG.weddingDateIso.split('-').join(',') + ') - TODAY())']
@@ -155,6 +162,22 @@ function buildSummarySheet_(ss) {
   sheet.setColumnWidth(3, 140);
   sheet.setHiddenGridlines(true);
   sheet.getRange('A1:E20').setBackground(PALETTE.band);
+}
+
+
+/**
+ * Column number -> an open-ended A1 range for everything below the header,
+ * e.g. 4 becomes "D2:D".
+ */
+function colRange_(index) {
+  var letter = '';
+  var n = index;
+  while (n > 0) {
+    var r = (n - 1) % 26;
+    letter = String.fromCharCode(65 + r) + letter;
+    n = Math.floor((n - 1) / 26);
+  }
+  return letter + '2:' + letter;
 }
 
 

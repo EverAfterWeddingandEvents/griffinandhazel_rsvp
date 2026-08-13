@@ -36,23 +36,26 @@ The form collects:
 | Field | Required | Notes |
 | --- | --- | --- |
 | Full name | yes | |
-| Email | no | used to match repeat replies |
-| Mobile number | no | hide it with `askForPhone: false` |
 | Joyfully Accepts / Regretfully Declines | yes | |
 | Number attending | when accepting | 1 – 10, configurable |
 | Names in your party | no | one per line, for place cards |
 | A message for Griffin & Hazel | no | up to 1000 characters |
 
-It is open to anyone with the link, and **no emails are sent** — everything is
+It is open to anyone with the link, and no contact details are collected — just
+the name, the answer, and the headcount. Nothing is emailed; everything is
 recorded in the spreadsheet only. A hidden honeypot field quietly discards
 drive-by bot submissions.
 
 ### Guests can change their mind
 
 If someone replies twice, the second reply **updates their existing row** rather
-than adding a duplicate. Matching is by email when one was given, otherwise by
-name. Set `allowEdits: false` in `src/Config.gs` if you would rather keep every
-submission as a separate row.
+than adding a duplicate.
+
+Because a name is the only thing we collect, that is what the matching uses — so
+**two guests who share a name would overwrite each other.** With Filipino naming
+being what it is, that is worth a thought. If you would rather never lose a
+reply, set `allowEdits: false` in `src/Config.gs`; every submission then lands as
+its own row and you tidy up duplicates by eye.
 
 ---
 
@@ -201,7 +204,6 @@ A few worth knowing:
 rsvpDeadlineIso:  '2026-12-31',   // after this day the form politely closes itself
 rsvpDeadlineLabel:'December 2026',// what guests actually read
 maxPartySize:     10,             // largest number of seats one reply may claim
-askForPhone:      true,           // false hides the mobile number field
 allowEdits:       true,           // false records every reply as a new row
 ```
 
@@ -248,7 +250,7 @@ colours and copy quickly.
 ## Checking the logic
 
 ```bash
-node tools/test_logic.js     # 42 assertions, no Google account needed
+node tools/test_logic.js     # 38 assertions, no Google account needed
 ```
 
 Covers field validation, the duplicate-reply matching, confirmation codes, the
@@ -279,8 +281,8 @@ repository.
 
 **RSVPs** tab — one row per guest:
 
-`Timestamp · Last Updated · Full Name · Email · Phone · Attending · Party Size ·
-Guest Names · Message to the Couple · Confirmation Code`
+`Timestamp · Last Updated · Full Name · Attending · Party Size · Guest Names ·
+Message to the Couple · Confirmation Code`
 
 *Attending* is colour-coded green for Yes and blush for No. *Last Updated* is
 filled in only when someone changed an earlier reply.

@@ -37,17 +37,16 @@ const V = p => ctx.validate_(p);
 check('empty name rejected',        V({name:'', attending:'yes'}).field, 'name');
 check('one-char name rejected',     V({name:'A', attending:'yes'}).field, 'name');
 check('81-char name rejected',      V({name:'x'.repeat(81), attending:'yes'}).field, 'name');
-check('bad email rejected',         V({name:'Juan Cruz', email:'nope', attending:'no'}).field, 'email');
 check('missing attendance rejected',V({name:'Juan Cruz'}).field, 'attending');
 check('bogus attendance rejected',  V({name:'Juan Cruz', attending:'maybe'}).field, 'attending');
 check('party size 0 rejected',      V({name:'Juan Cruz', attending:'yes', partySize:'0'}).field, 'partySize');
 check('party size 11 rejected',     V({name:'Juan Cruz', attending:'yes', partySize:'11'}).field, 'partySize');
 check('party size 10 accepted',     V({name:'Juan Cruz', attending:'yes', partySize:'10'}).partySize, 10);
 
-const yes = V({name:'  Juan   Dela  Cruz ', email:' JUAN@Example.COM ', phone:'0917 000 0000',
+const yes = V({name:'  Juan   Dela  Cruz ',
                attending:'yes', partySize:'3', guestNames:'A\nB', message:'Congrats!'});
 check('name whitespace collapsed',  yes.name, 'Juan Dela Cruz');
-check('email lowercased + trimmed', yes.email, 'juan@example.com');
+check('contact fields dropped',     [yes.email, yes.phone], [undefined, undefined]);
 check('attending is boolean',       yes.attending, true);
 check('party size parsed',          yes.partySize, 3);
 check('message kept',               yes.message, 'Congrats!');
@@ -57,7 +56,6 @@ check('decline forces 0 seats',     no.partySize, 0);
 check('decline drops guest names',  no.guestNames, '');
 check('decline keeps message',      no.message, 'Sorry!');
 
-check('email optional',             V({name:'Juan Cruz', attending:'no'}).email, '');
 check('message truncated to 1000',  V({name:'Juan Cruz', attending:'no', message:'m'.repeat(1500)}).message.length, 1000);
 check('guest names truncated',      V({name:'J C', attending:'yes', partySize:'2', guestNames:'g'.repeat(900)}).guestNames.length, 500);
 
@@ -79,21 +77,19 @@ ctx.Date = realDate;
 
 // --- findExistingRow_ against a fake sheet ---------------------------------
 const rows = [
-  //  ts  upd  name             email               phone attending party names msg  code
-  ['t','', 'Juan Dela Cruz', 'juan@example.com', '', 'Yes', 2, '', '', 'JUA-1111'],
-  ['t','', 'Maria Santos',   '',                 '', 'No',  0, '', '', 'MAR-2222'],
+  //  ts  upd  name             attending party names msg  code
+  ['t','', 'Juan Dela Cruz', 'Yes', 2, '', '', 'JUA-1111'],
+  ['t','', 'Maria Santos',   'No',  0, '', '', 'MAR-2222'],
 ];
 const fakeSheet = {
   getLastRow: () => rows.length + 1,
   getRange: (r, c, nr, nc) => ({ getValues: () => rows.slice(r - 2, r - 2 + nr) })
 };
-const F = clean => ctx.findExistingRow_(fakeSheet, clean);
-check('matches on email',            F({email:'juan@example.com', name:'Totally Different'}), 2);
-check('email match is exclusive',    F({email:'someone@else.com', name:'Juan Dela Cruz'}), 0);
-check('matches on name when no email', F({email:'', name:'maria  SANTOS'}), 3);
-check('no name match if row has email', F({email:'', name:'Juan Dela Cruz'}), 0);
-check('unknown guest is new',        F({email:'', name:'Louie Mendez'}), 0);
-check('empty sheet is new',          ctx.findExistingRow_({getLastRow: () => 1}, {email:'a@b.co', name:'x'}), 0);
+const F = name => ctx.findExistingRow_(fakeSheet, { name });
+check('matches on name',             F('Juan Dela Cruz'), 2);
+check('name match ignores case/spacing', F('  maria   SANTOS '), 3);
+check('unknown guest is new',        F('Louie Mendez'), 0);
+check('empty sheet is new',          ctx.findExistingRow_({getLastRow: () => 1}, {name:'x'}), 0);
 
 // --- honeypot and doPost ---------------------------------------------------
 // Both run before any spreadsheet call, so no sheet stubs are needed here.
@@ -118,7 +114,7 @@ ctx.console.error = () => {};
 check('doPost handles bad JSON',      post('not json{').ok, false);
 check('doPost handles empty body',    post('{}').field, 'name');
 check('doPost validates like the rest', post(JSON.stringify(
-        { name: 'Juan Cruz', email: 'bad' })).field, 'email');
+        { name: 'Juan Cruz' })).field, 'attending');
 check('doPost honours the honeypot',  post(JSON.stringify(
         { name: 'Bot', attending: 'yes', website: 'x' })).ok, true);
 check('doPost survives a missing event', JSON.parse(ctx.doPost().text).ok, false);
