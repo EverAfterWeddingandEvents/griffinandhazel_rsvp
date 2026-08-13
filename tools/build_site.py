@@ -119,15 +119,53 @@ FAVICON = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
 """
 
 
+def jpeg_size(path):
+    """
+    (width, height) from a JPEG's first frame header.
+
+    Hand-rolled rather than via Pillow: this runs on every build, and the rest
+    of build_site.py has no third-party dependencies. Returns None if the file
+    is not a JPEG we recognise, which simply drops the two dimension tags.
+    """
+    try:
+        with open(path, "rb") as fh:
+            if fh.read(2) != b"\xff\xd8":          # not a JPEG
+                return None
+            while True:
+                byte = fh.read(1)
+                while byte and byte != b"\xff":    # scan to the next marker
+                    byte = fh.read(1)
+                marker = fh.read(1)
+                while marker == b"\xff":           # fill bytes before the code
+                    marker = fh.read(1)
+                if not marker:
+                    return None
+                code = marker[0]
+                # SOF0-SOF15 carry the dimensions. C4/C8/CC share the range but
+                # are Huffman/arithmetic tables, not frame headers.
+                if 0xC0 <= code <= 0xCF and code not in (0xC4, 0xC8, 0xCC):
+                    fh.read(3)                     # segment length + precision
+                    height = int.from_bytes(fh.read(2), "big")
+                    width = int.from_bytes(fh.read(2), "big")
+                    return width, height
+                length = int.from_bytes(fh.read(2), "big")
+                if length < 2:
+                    return None
+                fh.seek(length - 2, 1)
+    except (OSError, ValueError):
+        return None
+
+
 def social_meta(config, domain):
     """
     Title, description and link-preview cards.
 
     A wedding link gets pasted into Messenger far more than it gets typed, so
-    the preview card is most of what people actually see of this page.
+    the preview card is most of what people actually see of this page. It says
+    RSVP outright, because the card is the only prompt most guests get.
     """
     names = "%s & %s" % (first_name(config["groom"]), first_name(config["bride"]))
-    title = "%s — %s" % (names, config["weddingDateShort"])
+    title = "%s — RSVP · %s" % (names, config["weddingDateShort"])
     description = "%s and %s %s at %s, %s. Kindly reply by %s." % (
         config["groom"], config["bride"], config["requestLine"],
         config["ceremony"]["venue"], config["ceremony"]["city"],
@@ -140,8 +178,10 @@ def social_meta(config, domain):
         '<meta name="description" content="%s">' % esc(description),
         '<link rel="icon" href="favicon.svg" type="image/svg+xml">',
         '<meta property="og:type" content="website">',
+        '<meta property="og:site_name" content="%s">' % esc("%s — Wedding RSVP" % names),
         '<meta property="og:title" content="%s">' % esc(title),
         '<meta property="og:description" content="%s">' % esc(description),
+        '<meta property="og:locale" content="en_PH">',
         '<meta name="twitter:card" content="summary_large_image">',
     ]
     if base:
@@ -150,6 +190,16 @@ def social_meta(config, domain):
             '<meta property="og:image" content="%s">' % image,
             '<meta property="og:image:alt" content="%s on the beach">' % esc(names),
         ]
+        # Without these Facebook renders the first share with an empty image
+        # slot — it defers fetching the photo until it has scraped the page.
+        # A wedding link is mostly shared once, so the first card is the card.
+        size = jpeg_size(os.path.join(IMG_DIR, ASSETS[0][1]))
+        if size:
+            tags += [
+                '<meta property="og:image:width" content="%d">' % size[0],
+                '<meta property="og:image:height" content="%d">' % size[1],
+                '<meta property="og:image:type" content="image/jpeg">',
+            ]
 
     return title, "\n  ".join(tags)
 
