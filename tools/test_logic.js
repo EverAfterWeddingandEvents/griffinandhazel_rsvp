@@ -9,7 +9,7 @@
  */
 
 const fs = require('fs'), vm = require('vm'), path = require('path');
-const SRC = path.join(__dirname, '..', 'src');
+const SRC = path.join(__dirname, '..', 'apps-script');
 
 // Minimal stubs for the Apps Script services the pure logic touches.
 const ctx = {
