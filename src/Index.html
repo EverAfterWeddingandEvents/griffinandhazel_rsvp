@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <?!= include('Assets'); ?>
+  <?!= include('Stylesheet'); ?>
+</head>
+
+<body>
+<div class="page">
+
+  <!-- ===================== HERO ===================== -->
+  <header class="hero">
+    <div class="hero__photo" role="img" aria-label="Griffin and Hazel on the beach"></div>
+
+    <div class="hero__inner">
+      <div class="monogram" id="monogram"></div>
+
+      <p class="eyebrow" id="invitationLine"></p>
+
+      <h1 class="hero__names script">
+        <span class="hero__name" id="groomFirst"></span>
+        <span class="amp">&amp;</span>
+        <span class="hero__name" id="brideFirst"></span>
+      </h1>
+
+      <div class="rule"><span class="rule__mark">&#10022;</span></div>
+
+      <p class="hero__date" id="heroDate"></p>
+
+      <div class="countdown" id="countdown"></div>
+
+      <a class="scroll-cue" href="#rsvp" aria-label="Go to the RSVP form">&#8964;</a>
+    </div>
+  </header>
+
+  <!-- ===================== DETAILS ===================== -->
+  <section class="section">
+    <h2 class="section__title script">The Celebration</h2>
+    <div class="rule"><span class="rule__mark">&#10022;</span></div>
+
+    <div class="details">
+      <div class="cards">
+        <div class="card">
+          <div class="card__label" id="ceremonyTitle"></div>
+          <div class="card__venue" id="ceremonyVenue"></div>
+          <div class="card__meta" id="ceremonyMeta"></div>
+        </div>
+
+        <div class="card">
+          <div class="card__label" id="receptionTitle"></div>
+          <div class="card__venue" id="receptionVenue"></div>
+          <div class="card__meta" id="receptionMeta"></div>
+        </div>
+      </div>
+
+      <figure class="photo-frame">
+        <div class="photo-frame__img" role="img" aria-label="Griffin and Hazel walking along the shore"></div>
+        <figcaption class="photo-frame__caption" id="closingNote"></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ===================== RSVP ===================== -->
+  <section class="section rsvp" id="rsvp">
+    <div class="form-card">
+
+      <!-- Form -->
+      <div id="formPane">
+        <div class="form-intro">
+          <h2 class="section__title script">Kindly Reply</h2>
+          <p id="requestLine"></p>
+          <span class="deadline" id="deadline"></span>
+        </div>
+
+        <form id="rsvpForm" novalidate>
+
+          <div class="field" id="f-name">
+            <label for="name">Full Name <span class="req">*</span></label>
+            <input type="text" id="name" name="name" autocomplete="name"
+                   placeholder="Juan Dela Cruz" maxlength="80" required>
+            <p class="field__error" id="e-name"></p>
+          </div>
+
+          <div class="grid-2">
+            <div class="field" id="f-email">
+              <label for="email">Email</label>
+              <input type="email" id="email" name="email" autocomplete="email"
+                     placeholder="you@example.com" maxlength="120">
+              <p class="field__error" id="e-email"></p>
+            </div>
+
+            <div class="field" id="f-phone">
+              <label for="phone">Mobile Number</label>
+              <input type="tel" id="phone" name="phone" autocomplete="tel"
+                     placeholder="0917 000 0000" maxlength="40">
+              <p class="field__error" id="e-phone"></p>
+            </div>
+          </div>
+
+          <div class="field" id="f-attending">
+            <span class="fieldset__legend">Will you be joining us? <span class="req">*</span></span>
+            <div class="choices" role="radiogroup" aria-label="Will you be joining us?">
+              <label class="choice choice--yes">
+                <input type="radio" name="attending" value="yes">
+                <span class="choice__box">
+                  <strong>Joyfully Accepts</strong>
+                  <span>I'll be there</span>
+                </span>
+              </label>
+              <label class="choice choice--no">
+                <input type="radio" name="attending" value="no">
+                <span class="choice__box">
+                  <strong>Regretfully Declines</strong>
+                  <span>Celebrating from afar</span>
+                </span>
+              </label>
+            </div>
+            <p class="field__error" id="e-attending"></p>
+          </div>
+
+          <div class="reveal" id="partyReveal">
+            <div class="field" id="f-partySize">
+              <label for="partySize">Number Attending <span class="req">*</span></label>
+              <select id="partySize" name="partySize"></select>
+              <span class="hint">Including yourself.</span>
+              <p class="field__error" id="e-partySize"></p>
+            </div>
+
+            <div class="field" id="f-guestNames">
+              <label for="guestNames">Names in Your Party</label>
+              <textarea id="guestNames" name="guestNames" maxlength="500"
+                        placeholder="One name per line"></textarea>
+              <span class="hint">So we can set your place cards correctly.</span>
+            </div>
+          </div>
+
+          <div class="field" id="f-message">
+            <label for="message">A Message for Griffin &amp; Hazel</label>
+            <textarea id="message" name="message" maxlength="1000"
+                      placeholder="Share a wish, a blessing, or a favourite memory..."></textarea>
+            <span class="hint"><span id="msgCount">0</span> / 1000</span>
+          </div>
+
+          <button type="submit" class="btn" id="submitBtn">Send Our Reply</button>
+          <div class="form-error" id="formError"></div>
+        </form>
+      </div>
+
+      <!-- Thank you -->
+      <div class="thanks" id="thanksPane">
+        <div class="thanks__mark">&#10022;</div>
+        <h2 class="thanks__title script" id="thanksTitle"></h2>
+        <p class="thanks__body" id="thanksBody"></p>
+        <div class="thanks__code" id="thanksCode"></div>
+        <br>
+        <button type="button" class="thanks__again" id="againBtn">Submit another reply</button>
+      </div>
+
+      <!-- RSVPs closed -->
+      <div class="closed" id="closedPane" style="display:none">
+        <h3 class="script">Our guest list has closed</h3>
+        <p id="closedBody"></p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===================== FOOTER ===================== -->
+  <footer class="footer">
+    <div class="rule"><span class="rule__mark">&#10022;</span></div>
+    <div class="footer__names" id="footerNames"></div>
+    <div class="footer__meta" id="footerMeta"></div>
+  </footer>
+
+</div>
+
+<script>
+  var CONFIG = <?!= configJson ?>;
+</script>
+<?!= include('JavaScript'); ?>
+</body>
+</html>

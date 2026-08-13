@@ -1,0 +1,258 @@
+<script>
+(function () {
+  'use strict';
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  var firstName = function (full) { return String(full || '').trim().split(/\s+/)[0] || ''; };
+
+  var esc = function (s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  };
+
+
+  /* ---------------------------------------------------------------------- */
+  /*  Paint the page from CONFIG                                            */
+  /* ---------------------------------------------------------------------- */
+
+  function render() {
+    $('invitationLine').textContent = CONFIG.invitationLine;
+    $('monogram').textContent = CONFIG.monogram;
+    $('groomFirst').textContent = firstName(CONFIG.groom);
+    $('brideFirst').textContent = firstName(CONFIG.bride);
+    $('heroDate').textContent =
+      CONFIG.weddingDateLong + ' · ' + CONFIG.ceremony.city;
+
+    $('ceremonyTitle').textContent = CONFIG.ceremony.title;
+    $('ceremonyVenue').textContent = CONFIG.ceremony.venue;
+    $('ceremonyMeta').textContent =
+      [CONFIG.ceremony.time, CONFIG.ceremony.city].filter(Boolean).join(' · ');
+
+    $('receptionTitle').textContent = CONFIG.reception.title;
+    $('receptionVenue').textContent = CONFIG.reception.venue;
+    $('receptionMeta').textContent =
+      [CONFIG.reception.time, CONFIG.reception.city].filter(Boolean).join(' · ');
+
+    $('closingNote').textContent = CONFIG.closingNote;
+    $('requestLine').textContent =
+      CONFIG.groom + ' and ' + CONFIG.bride + ' ' + CONFIG.requestLine + '.';
+    $('deadline').textContent = 'Kindly reply by ' + CONFIG.rsvpDeadlineLabel;
+
+    $('footerNames').textContent = firstName(CONFIG.groom) + ' & ' + firstName(CONFIG.bride);
+    $('footerMeta').textContent =
+      CONFIG.weddingDateShort + '  ·  ' + CONFIG.ceremony.city;
+
+    $('closedBody').textContent =
+      'Replies closed on ' + CONFIG.rsvpDeadlineLabel +
+      '. If you still need to reach ' + firstName(CONFIG.groom) + ' and ' +
+      firstName(CONFIG.bride) + ', please message them directly.';
+
+    // Party size options
+    var select = $('partySize');
+    for (var i = 1; i <= CONFIG.maxPartySize; i++) {
+      var opt = document.createElement('option');
+      opt.value = String(i);
+      opt.textContent = i === 1 ? 'Just me' : i + ' guests';
+      select.appendChild(opt);
+    }
+
+    if (!CONFIG.askForPhone) {
+      $('f-phone').style.display = 'none';
+    }
+
+    if (!CONFIG.isOpen) {
+      $('formPane').style.display = 'none';
+      $('closedPane').style.display = 'block';
+    }
+
+    renderCountdown();
+  }
+
+
+  function renderCountdown() {
+    var parts = CONFIG.weddingDateIso.split('-');
+    var wedding = new Date(+parts[0], +parts[1] - 1, +parts[2]);
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    var days = Math.round((wedding - today) / 86400000);
+    var el = $('countdown');
+
+    if (days > 1) {
+      el.innerHTML = '<strong>' + days + '</strong> days until we say I do';
+    } else if (days === 1) {
+      el.innerHTML = '<strong>Tomorrow</strong>';
+    } else if (days === 0) {
+      el.innerHTML = '<strong>Today</strong> is the day';
+    } else {
+      el.innerHTML = '<strong>' + esc(CONFIG.weddingYear) + '</strong>';
+    }
+  }
+
+
+  /* ---------------------------------------------------------------------- */
+  /*  Form behaviour                                                        */
+  /* ---------------------------------------------------------------------- */
+
+  function clearErrors() {
+    ['name', 'email', 'phone', 'attending', 'partySize'].forEach(function (f) {
+      var wrap = $('f-' + f);
+      if (wrap) { wrap.classList.remove('field--error'); }
+    });
+    $('formError').classList.remove('is-visible');
+  }
+
+  function showFieldError(field, message) {
+    var wrap = $('f-' + field);
+    var slot = $('e-' + field);
+    if (wrap && slot) {
+      wrap.classList.add('field--error');
+      slot.textContent = message;
+      wrap.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return true;
+    }
+    return false;
+  }
+
+  function showFormError(message) {
+    var box = $('formError');
+    box.textContent = message;
+    box.classList.add('is-visible');
+    box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+
+  function attendingValue() {
+    var checked = document.querySelector('input[name="attending"]:checked');
+    return checked ? checked.value : '';
+  }
+
+
+  function wireUp() {
+    // Show the party fields only when someone is coming
+    Array.prototype.forEach.call(
+      document.querySelectorAll('input[name="attending"]'),
+      function (radio) {
+        radio.addEventListener('change', function () {
+          $('partyReveal').classList.toggle('is-open', radio.value === 'yes');
+          $('f-attending').classList.remove('field--error');
+        });
+      }
+    );
+
+    // Live character count on the message
+    $('message').addEventListener('input', function () {
+      $('msgCount').textContent = this.value.length;
+    });
+
+    $('rsvpForm').addEventListener('submit', onSubmit);
+    $('againBtn').addEventListener('click', resetForm);
+  }
+
+
+  function onSubmit(event) {
+    event.preventDefault();
+    clearErrors();
+
+    var payload = {
+      name: $('name').value,
+      email: $('email').value,
+      phone: CONFIG.askForPhone ? $('phone').value : '',
+      attending: attendingValue(),
+      partySize: $('partySize').value,
+      guestNames: $('guestNames').value,
+      message: $('message').value
+    };
+
+    // Cheap client-side checks first, so the round trip is not wasted
+    if (payload.name.trim().length < 2) {
+      return showFieldError('name', 'Please tell us your full name.');
+    }
+    if (payload.email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(payload.email.trim())) {
+      return showFieldError('email', 'That email address does not look quite right.');
+    }
+    if (!payload.attending) {
+      return showFieldError('attending', 'Please choose one so we know to save you a seat.');
+    }
+
+    setBusy(true);
+
+    google.script.run
+      .withSuccessHandler(onSuccess)
+      .withFailureHandler(onFailure)
+      .submitRsvp(payload);
+  }
+
+
+  function setBusy(busy) {
+    var btn = $('submitBtn');
+    btn.disabled = busy;
+    btn.textContent = busy ? 'Sending…' : 'Send Our Reply';
+  }
+
+
+  function onSuccess(result) {
+    setBusy(false);
+
+    if (!result || !result.ok) {
+      var message = (result && result.error) || 'Something went wrong. Please try again.';
+      if (!(result && result.field && showFieldError(result.field, message))) {
+        showFormError(message);
+      }
+      return;
+    }
+
+    var name = firstName(result.name);
+
+    $('thanksTitle').textContent = result.attending
+      ? 'Thank you, ' + name + '!'
+      : 'Thank you, ' + name;
+
+    if (result.attending) {
+      $('thanksBody').textContent =
+        (result.updated ? 'We have updated your reply. ' : '') +
+        'We have saved ' +
+        (result.partySize === 1 ? 'a seat' : result.partySize + ' seats') +
+        ' for you on ' + CONFIG.weddingDateShort + ' at ' +
+        CONFIG.ceremony.venue + ', with the reception to follow at ' +
+        CONFIG.reception.venue + '. ' + CONFIG.closingNote;
+    } else {
+      $('thanksBody').textContent =
+        (result.updated ? 'We have updated your reply. ' : '') +
+        'We will miss you dearly, but we are so grateful for your love and ' +
+        'prayers from afar. Thank you for letting us know.';
+    }
+
+    $('thanksCode').textContent = 'Confirmation · ' + result.code;
+
+    $('formPane').style.display = 'none';
+    $('thanksPane').classList.add('is-visible');
+    document.getElementById('rsvp').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+
+  function onFailure(error) {
+    setBusy(false);
+    console.error(error);
+    showFormError('We could not reach the server. Please check your connection and try again.');
+  }
+
+
+  function resetForm() {
+    $('rsvpForm').reset();
+    $('partyReveal').classList.remove('is-open');
+    $('msgCount').textContent = '0';
+    clearErrors();
+    $('thanksPane').classList.remove('is-visible');
+    $('formPane').style.display = 'block';
+    document.getElementById('rsvp').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+
+  /* ---------------------------------------------------------------------- */
+
+  render();
+  wireUp();
+})();
+</script>
