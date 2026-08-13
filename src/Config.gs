@@ -74,6 +74,7 @@ function getPublicConfig_() {
     weddingDateShort: CONFIG.weddingDateShort,
     ceremony: CONFIG.ceremony,
     reception: CONFIG.reception,
+    rsvpDeadlineIso: CONFIG.rsvpDeadlineIso,
     rsvpDeadlineLabel: CONFIG.rsvpDeadlineLabel,
     maxPartySize: CONFIG.maxPartySize,
     askForPhone: CONFIG.askForPhone,

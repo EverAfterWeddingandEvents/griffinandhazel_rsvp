@@ -329,6 +329,15 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 300; margin: 0; letter-spac
   background: var(--linen);
 }
 
+/* Honeypot — off-screen rather than display:none, which some bots detect */
+.hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
 .field { margin-bottom: 1.5rem; }
 
 .field label,

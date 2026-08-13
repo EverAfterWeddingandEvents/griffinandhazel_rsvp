@@ -13,6 +13,66 @@
 
 
   /* ---------------------------------------------------------------------- */
+  /*  Transport                                                             */
+  /*                                                                        */
+  /*  The same page runs in two places:                                     */
+  /*    · served by Apps Script  -> google.script.run is available          */
+  /*    · served from your own domain -> POST to the web app instead        */
+  /*                                                                        */
+  /*  The fetch deliberately sends text/plain. Any other content type makes */
+  /*  the browser send a CORS preflight, which Apps Script cannot answer.   */
+  /* ---------------------------------------------------------------------- */
+
+  var hosted = !!(window.google && window.google.script && window.google.script.run);
+  var ENDPOINT = window.RSVP_ENDPOINT || '';
+
+  function send(payload, onDone, onFail) {
+    if (hosted) {
+      google.script.run
+        .withSuccessHandler(onDone)
+        .withFailureHandler(onFail)
+        .submitRsvp(payload);
+      return;
+    }
+
+    if (!ENDPOINT || ENDPOINT.indexOf('http') !== 0) {
+      onFail(new Error('RSVP_ENDPOINT has not been set on this page.'));
+      return;
+    }
+
+    fetch(ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload),
+      redirect: 'follow'
+    })
+      .then(function (response) { return response.json(); })
+      .then(onDone)
+      .catch(onFail);
+  }
+
+
+  /**
+   * Apps Script decides this server-side. On a static host we work it out
+   * here — the server checks again before writing anything, so a wrong clock
+   * on someone's laptop cannot get a late reply through.
+   */
+  function rsvpIsOpen() {
+    if (typeof CONFIG.isOpen === 'boolean') {
+      return CONFIG.isOpen;
+    }
+    if (!CONFIG.rsvpDeadlineIso) {
+      return true;
+    }
+    var now = new Date();
+    var today = now.getFullYear() + '-' +
+      ('0' + (now.getMonth() + 1)).slice(-2) + '-' +
+      ('0' + now.getDate()).slice(-2);
+    return today <= CONFIG.rsvpDeadlineIso;
+  }
+
+
+  /* ---------------------------------------------------------------------- */
   /*  Paint the page from CONFIG                                            */
   /* ---------------------------------------------------------------------- */
 
@@ -61,7 +121,7 @@
       $('f-phone').style.display = 'none';
     }
 
-    if (!CONFIG.isOpen) {
+    if (!rsvpIsOpen()) {
       $('formPane').style.display = 'none';
       $('closedPane').style.display = 'block';
     }
@@ -162,7 +222,8 @@
       attending: attendingValue(),
       partySize: $('partySize').value,
       guestNames: $('guestNames').value,
-      message: $('message').value
+      message: $('message').value,
+      website: $('website').value
     };
 
     // Cheap client-side checks first, so the round trip is not wasted
@@ -177,11 +238,7 @@
     }
 
     setBusy(true);
-
-    google.script.run
-      .withSuccessHandler(onSuccess)
-      .withFailureHandler(onFailure)
-      .submitRsvp(payload);
+    send(payload, onSuccess, onFailure);
   }
 
 

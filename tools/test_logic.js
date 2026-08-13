@@ -95,5 +95,36 @@ check('no name match if row has email', F({email:'', name:'Juan Dela Cruz'}), 0)
 check('unknown guest is new',        F({email:'', name:'Louie Mendez'}), 0);
 check('empty sheet is new',          ctx.findExistingRow_({getLastRow: () => 1}, {email:'a@b.co', name:'x'}), 0);
 
+// --- honeypot and doPost ---------------------------------------------------
+// Both run before any spreadsheet call, so no sheet stubs are needed here.
+ctx.ContentService = {
+  MimeType: { JSON: 'json' },
+  createTextOutput(text) {
+    return { text, mime: null, setMimeType(m) { this.mime = m; return this; } };
+  }
+};
+
+const trap = ctx.handleRsvp_({ name: 'Spam Bot', attending: 'yes', partySize: '1',
+                               website: 'http://buy-cheap-things.example' });
+check('honeypot short-circuits',      trap.ok, true);
+check('honeypot gives nothing away',  trap.code, 'THANK-YOU');
+
+const post = body => JSON.parse(ctx.doPost({ postData: { contents: body } }).text);
+
+// These two deliberately take the error path, which logs a stack. Hush it so
+// a clean run stays readable.
+const realError = ctx.console.error;
+ctx.console.error = () => {};
+check('doPost handles bad JSON',      post('not json{').ok, false);
+check('doPost handles empty body',    post('{}').field, 'name');
+check('doPost validates like the rest', post(JSON.stringify(
+        { name: 'Juan Cruz', email: 'bad' })).field, 'email');
+check('doPost honours the honeypot',  post(JSON.stringify(
+        { name: 'Bot', attending: 'yes', website: 'x' })).ok, true);
+check('doPost survives a missing event', JSON.parse(ctx.doPost().text).ok, false);
+ctx.console.error = realError;
+
+check('doPost replies as JSON',       ctx.doPost({ postData: { contents: '{}' } }).mime, 'json');
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

@@ -82,6 +82,12 @@
 
         <form id="rsvpForm" novalidate>
 
+          <!-- Hidden from people, catnip for bots. Must stay empty. -->
+          <div class="hp" aria-hidden="true">
+            <label for="website">Website</label>
+            <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
+          </div>
+
           <div class="field" id="f-name">
             <label for="name">Full Name <span class="req">*</span></label>
             <input type="text" id="name" name="name" autocomplete="name"

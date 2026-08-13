@@ -1,8 +1,19 @@
 # Griffin & Hazel — Wedding RSVP
 
-A custom RSVP website that runs entirely on a Google Sheet, using Google Apps
-Script. No hosting, no domain, no monthly fee — guests open a link, reply, and
-their answer lands in your spreadsheet instantly.
+A custom RSVP website backed by a Google Sheet. Guests open a link, reply, and
+their answer lands in your spreadsheet instantly — no database, no monthly fee.
+
+It ships in two shapes, from the same source files:
+
+| | URL guests see | Cost |
+| --- | --- | --- |
+| **A. Your own domain** *(recommended)* | `griffinandhazel.com` | a domain, ~₱600–900/yr |
+| **B. Apps Script only** | `script.google.com/macros/s/AKfy…/exec` | free |
+
+**B** is the quickest way to test everything. **A** hosts the page on your own
+domain and quietly uses the Apps Script only as the endpoint that writes to your
+Sheet, so the Google URL never appears anywhere. Set up **B** first either way —
+**A** builds directly on top of it.
 
 **Griffin Paul M. Gamallo & Hazel Jade A. Gamallo**
 Saturday, May 8, 2027 · Our Lady of the Most Holy Rosary Cathedral Parish, Dipolog City
@@ -33,7 +44,8 @@ The form collects:
 | A message for Griffin & Hazel | no | up to 1000 characters |
 
 It is open to anyone with the link, and **no emails are sent** — everything is
-recorded in the spreadsheet only.
+recorded in the spreadsheet only. A hidden honeypot field quietly discards
+drive-by bot submissions.
 
 ### Guests can change their mind
 
@@ -44,7 +56,9 @@ submission as a separate row.
 
 ---
 
-## Setting it up (about 10 minutes)
+## Part B — the Apps Script (about 10 minutes)
+
+Do this first. Option A needs it too.
 
 ### 1. Create the spreadsheet
 
@@ -95,16 +109,83 @@ counts).
 - Execute as: **Me**
 - Who has access: **Anyone**
 
-Press **Deploy** and copy the **Web app URL**. That link is what you send to
-your guests — put it in your invitations, on a QR code, wherever you like.
+Press **Deploy** and copy the **Web app URL**. It looks like:
 
-You can find it again any time from the spreadsheet menu:
-**💍 Wedding RSVP → Show RSVP form link**.
+```
+https://script.google.com/macros/s/AKfycbx7Rk9.../exec
+```
+
+Keep that URL — Option A needs it. If you stop here, that link *is* your RSVP
+form; share it as a QR code so nobody has to type it. You can find it again from
+the spreadsheet menu: **💍 Wedding RSVP → Show RSVP form link**.
 
 ### 6. After any change
 
 Editing a file does **not** update the live form on its own. Go to
 **Deploy → Manage deployments → ✏️ → Version: New version → Deploy**.
+
+Always use *New version* on the existing deployment. Creating a brand new
+deployment mints a **different URL**, which breaks every invitation already
+printed.
+
+---
+
+## Part A — putting it on your own domain
+
+The Apps Script URL cannot be renamed or pointed at a custom domain; that ID is
+assigned by Google. So instead of dressing it up, we move the page to your
+domain and leave Apps Script doing the invisible half — receiving replies and
+writing them to your Sheet.
+
+### 1. Build the site
+
+```bash
+python3 tools/build_site.py static --endpoint "https://script.google.com/macros/s/AKfy.../exec"
+```
+
+Use the `/exec` URL from Part B, step 5. This writes `build/site/`:
+
+```
+build/site/index.html          the whole page, ~33 KB
+build/site/assets/*.jpg        the photographs
+```
+
+### 2. Buy a domain
+
+Anywhere you like — Namecheap, Cloudflare, Porkbun, GoDaddy. Something such as
+`griffinandhazel.com`. Expect roughly ₱600–900 a year.
+
+### 3. Upload it
+
+Any static host works, and the free tiers are more than enough for a wedding.
+The simplest is drag-and-drop:
+
+- **Cloudflare Pages** — <https://pages.cloudflare.com> → *Upload assets* → drag
+  the **contents** of `build/site/` in → *Deploy*. Then **Custom domains → Set
+  up a domain**.
+- **Netlify** — <https://app.netlify.com/drop> → drag the `build/site` folder in
+  → **Domain settings → Add custom domain**.
+
+Both give free HTTPS. Drag the *contents* of `build/site`, not the folder
+itself, on Cloudflare — `index.html` must sit at the top level.
+
+### 4. Test it
+
+Open your domain and send yourself a test RSVP. It should appear in the Sheet
+within a second or two. Delete the test row afterwards.
+
+If the form says *"We could not reach the server"*, it is almost always one of:
+
+- the deployment's **Who has access** is not set to **Anyone** (this causes a
+  CORS failure, because Google returns a sign-in page instead of your data);
+- the endpoint URL ends in `/dev` instead of `/exec` — `/dev` only works while
+  you are signed in as the owner;
+- the script was edited but not redeployed as a **new version**.
+
+### 5. When you change anything
+
+Edit → redeploy the Apps Script (Part B, step 6) if you touched a `.gs` file →
+rebuild with the command in step 1 → re-upload `build/site/`.
 
 ---
 
@@ -146,6 +227,9 @@ python3 tools/build_assets.py --optimize
 Then paste the regenerated `src/Assets.html` back into the script editor and
 redeploy. Drop `--optimize` if your images are already web-sized.
 
+On the static build the photos are served as ordinary files instead, which is
+why `build/site/index.html` is only 33 KB — just rebuild and re-upload.
+
 ---
 
 ## Previewing the design locally
@@ -153,13 +237,23 @@ redeploy. Drop `--optimize` if your images are already web-sized.
 You can see the page in a normal browser without deploying anything:
 
 ```bash
-python3 tools/preview.py
+python3 tools/build_site.py preview
 open build/preview.html      # or just double-click it
 ```
 
-This stitches the files together and stubs out `google.script.run`, so the form
-submits to nothing and always shows the thank-you screen. Useful for tweaking
-colours and copy quickly. Nothing is written to any spreadsheet.
+This stitches the files together and stubs out the submission, so the form
+always shows the thank-you screen without saving anywhere. Useful for tweaking
+colours and copy quickly.
+
+## Checking the logic
+
+```bash
+node tools/test_logic.js     # 42 assertions, no Google account needed
+```
+
+Covers field validation, the duplicate-reply matching, confirmation codes, the
+deadline cut-off, the honeypot, and the `doPost` endpoint — with the Apps Script
+services stubbed out.
 
 ---
 
@@ -204,7 +298,12 @@ To get a clean guest list for your coordinator, use
 
 - Writes are wrapped in a script lock, so two guests replying at the same second
   cannot overwrite each other.
-- Every field is validated again on the server, not just in the browser.
+- Every field is validated again on the server, not just in the browser — the
+  deadline included, so a stale browser tab cannot sneak a late reply through.
+- The endpoint is public, exactly like any online form. The honeypot stops
+  drive-by bots; it will not stop someone determined. Glance at the Sheet now
+  and then and delete anything odd — replies are plain rows, so tidying up is
+  just deleting a row.
 - The page is responsive, works without JavaScript-heavy frameworks, and
   respects `prefers-reduced-motion`.
 - Apps Script web apps run inside an iframe on Google's servers; the fonts come
@@ -216,15 +315,20 @@ To get a clean guest list for your coordinator, use
 ```
 src/
   Config.gs         all wedding details in one place — start here
-  Code.gs           web app entry point, validation, writes to the sheet
+  Code.gs           doGet + doPost, validation, writes to the sheet
   Setup.gs          spreadsheet setup, formatting, summary tab, custom menu
   Index.html        page markup
   Stylesheet.html   the design
-  JavaScript.html   form behaviour
-  Assets.html       GENERATED — photos as base64
+  JavaScript.html   form behaviour, and the two ways it can submit
+  Assets.html       GENERATED — photos as base64, for Apps Script only
   appsscript.json   project manifest
 assets/img/         the source photographs
 tools/
   build_assets.py   regenerates src/Assets.html from assets/img
-  preview.py        builds build/preview.html for local viewing
+  build_site.py     preview | static — builds build/preview.html or build/site/
+  test_logic.js     tests the server-side logic without a Google account
 ```
+
+The page detects where it is running: served by Apps Script it uses
+`google.script.run`, and on your own domain it POSTs to `RSVP_ENDPOINT` instead.
+One set of source files, both deployments.

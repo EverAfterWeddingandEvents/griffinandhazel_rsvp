@@ -63,7 +63,7 @@ function include(filename) {
 /* ========================================================================== */
 
 /**
- * Called from the browser. Validates, then inserts or updates one row.
+ * Called by google.script.run when the form is served by Apps Script itself.
  *
  * @param {Object} payload  { name, email, phone, attending, partySize,
  *                            guestNames, message }
@@ -71,12 +71,53 @@ function include(filename) {
  *                          or { ok: false, error, field }
  */
 function submitRsvp(payload) {
+  return handleRsvp_(payload);
+}
+
+
+/**
+ * Called when the form lives on your own domain and posts here instead.
+ *
+ * The browser must send this as a "simple" request — POST with a body of
+ * Content-Type: text/plain — because Apps Script cannot answer the CORS
+ * preflight that any other content type would trigger. JavaScript.html
+ * already does that; see buildStaticSite() notes in the README.
+ */
+function doPost(e) {
+  var result;
   try {
+    var payload = JSON.parse((e && e.postData && e.postData.contents) || '{}');
+    result = handleRsvp_(payload);
+  } catch (err) {
+    console.error(err && err.stack ? err.stack : err);
+    result = fail_('We could not read that reply. Please try again.');
+  }
+
+  return ContentService
+    .createTextOutput(JSON.stringify(result))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+
+/**
+ * The one code path that actually writes a reply, whichever way it arrived.
+ */
+function handleRsvp_(payload) {
+  try {
+    payload = payload || {};
+
+    // Honeypot: a field hidden from people but usually filled in by bots.
+    // Pretend it worked rather than telling them what gave it away.
+    if (trim_(payload.website)) {
+      return { ok: true, code: 'THANK-YOU', name: 'Guest', attending: false,
+               partySize: 0, updated: false };
+    }
+
     if (!isRsvpOpen_()) {
       return fail_('RSVPs closed on ' + CONFIG.rsvpDeadlineLabel + '. Please contact the couple directly.');
     }
 
-    var clean = validate_(payload || {});
+    var clean = validate_(payload);
     if (clean.error) {
       return clean;
     }
