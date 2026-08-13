@@ -23,11 +23,13 @@ import shutil
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from build_assets import ASSETS  # noqa: E402  (css var, filename, max edge)
+from build_assets import ASSETS, GSAP_FILE, MUSIC_FILE  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, "src")
 IMG_DIR = os.path.join(ROOT, "assets", "img")
+AUDIO_DIR = os.path.join(ROOT, "assets", "audio")
+VENDOR_DIR = os.path.join(ROOT, "vendor")
 BUILD = os.path.join(ROOT, "build")
 
 PUBLIC_KEYS = (
@@ -35,6 +37,7 @@ PUBLIC_KEYS = (
     "weddingYear", "weddingDateShort", "ceremony", "reception",
     "rsvpDeadlineIso", "rsvpDeadlineLabel", "maxPartySize",
     "invitationLine", "requestLine", "closingNote",
+    "animations", "petals", "petalCount", "music",
 )
 
 PLACEHOLDER = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE"
@@ -108,9 +111,17 @@ def stitch(mode, endpoint):
     if mode == "static":
         # Real files load faster and cache; base64 only exists for Apps Script.
         page = page.replace("<?!= include('Assets'); ?>", linked_assets_css())
+        page = page.replace("<?!= include('Gsap'); ?>",
+                            '<script src="%s"></script>' % GSAP_FILE)
+        page = page.replace(
+            "<?!= include('Audio'); ?>",
+            '<script>window.RSVP_MUSIC_SRC = %s;</script>'
+            % json.dumps("assets/" + MUSIC_FILE))
         head = '<script>\n  var RSVP_ENDPOINT = %s;\n' % json.dumps(endpoint)
     else:
         page = page.replace("<?!= include('Assets'); ?>", read("Assets.html"))
+        page = page.replace("<?!= include('Gsap'); ?>", read("Gsap.html"))
+        page = page.replace("<?!= include('Audio'); ?>", read("Audio.html"))
         head = "<script>\n"
 
     page = page.replace("<?!= include('Stylesheet'); ?>", read("Stylesheet.html"))
@@ -164,6 +175,14 @@ def main():
 
     for _, name, _ in ASSETS:
         shutil.copy2(os.path.join(IMG_DIR, name), os.path.join(site, "assets", name))
+
+    shutil.copy2(os.path.join(VENDOR_DIR, GSAP_FILE), os.path.join(site, GSAP_FILE))
+
+    music = os.path.join(AUDIO_DIR, MUSIC_FILE)
+    if os.path.exists(music):
+        shutil.copy2(music, os.path.join(site, "assets", MUSIC_FILE))
+    else:
+        print("  ! %s is missing — the page will render without music." % MUSIC_FILE)
 
     total = sum(os.path.getsize(os.path.join(dp, f))
                 for dp, _, fs in os.walk(site) for f in fs)

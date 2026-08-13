@@ -9,60 +9,86 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
 
+<script>
+  var CONFIG = <?!= configJson ?>;
+</script>
+
+  <?!= include('Gsap'); ?>
+  <?!= include('Audio'); ?>
+
+  <script>
+    // Everything animated starts hidden — but only once we know the animation
+    // engine is here to bring it back. No GSAP, or a guest who prefers not to
+    // have things moving, means the page simply renders as-is.
+    (function () {
+      var reduce = window.matchMedia &&
+                   window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (window.gsap && !reduce && CONFIG.animations !== false) {
+        document.documentElement.className += ' anim';
+      }
+    })();
+  </script>
+
   <?!= include('Assets'); ?>
   <?!= include('Stylesheet'); ?>
 </head>
 
 <body>
+
+<div class="petals" id="petals" aria-hidden="true"></div>
+
 <div class="page">
 
   <!-- ===================== HERO ===================== -->
   <header class="hero">
-    <div class="hero__photo" role="img" aria-label="Griffin and Hazel on the beach"></div>
+    <div class="hero__photo" id="heroPhoto" role="img"
+         aria-label="Griffin and Hazel on the beach"></div>
 
     <div class="hero__inner">
-      <div class="monogram" id="monogram"></div>
+      <div class="monogram" id="monogram" data-reveal></div>
 
-      <p class="eyebrow" id="invitationLine"></p>
+      <p class="eyebrow" id="invitationLine" data-reveal></p>
 
       <h1 class="hero__names script">
-        <span class="hero__name" id="groomFirst"></span>
-        <span class="amp">&amp;</span>
-        <span class="hero__name" id="brideFirst"></span>
+        <span class="hero__name" id="groomFirst" data-reveal></span>
+        <span class="amp" data-reveal>&amp;</span>
+        <span class="hero__name" id="brideFirst" data-reveal></span>
       </h1>
 
-      <div class="rule"><span class="rule__mark">&#10022;</span></div>
+      <div class="rule" data-reveal><span class="rule__mark">&#10022;</span></div>
 
-      <p class="hero__date" id="heroDate"></p>
+      <p class="hero__date" id="heroDate" data-reveal></p>
 
-      <div class="countdown" id="countdown"></div>
+      <div class="countdown" id="countdown" data-reveal></div>
 
-      <a class="scroll-cue" href="#rsvp" aria-label="Go to the RSVP form">&#8964;</a>
+      <a class="scroll-cue" href="#rsvp" data-reveal
+         aria-label="Go to the RSVP form">&#8964;</a>
     </div>
   </header>
 
   <!-- ===================== DETAILS ===================== -->
   <section class="section">
-    <h2 class="section__title script">The Celebration</h2>
-    <div class="rule"><span class="rule__mark">&#10022;</span></div>
+    <h2 class="section__title script" data-reveal>The Celebration</h2>
+    <div class="rule" data-reveal><span class="rule__mark">&#10022;</span></div>
 
     <div class="details">
       <div class="cards">
-        <div class="card">
+        <div class="card" data-reveal>
           <div class="card__label" id="ceremonyTitle"></div>
           <div class="card__venue" id="ceremonyVenue"></div>
           <div class="card__meta" id="ceremonyMeta"></div>
         </div>
 
-        <div class="card">
+        <div class="card" data-reveal>
           <div class="card__label" id="receptionTitle"></div>
           <div class="card__venue" id="receptionVenue"></div>
           <div class="card__meta" id="receptionMeta"></div>
         </div>
       </div>
 
-      <figure class="photo-frame">
-        <div class="photo-frame__img" role="img" aria-label="Griffin and Hazel walking along the shore"></div>
+      <figure class="photo-frame" data-reveal>
+        <div class="photo-frame__img" role="img"
+             aria-label="Griffin and Hazel walking along the shore"></div>
         <figcaption class="photo-frame__caption" id="closingNote"></figcaption>
       </figure>
     </div>
@@ -70,7 +96,7 @@
 
   <!-- ===================== RSVP ===================== -->
   <section class="section rsvp" id="rsvp">
-    <div class="form-card">
+    <div class="form-card" data-reveal>
 
       <!-- Form -->
       <div id="formPane">
@@ -165,16 +191,24 @@
 
   <!-- ===================== FOOTER ===================== -->
   <footer class="footer">
-    <div class="rule"><span class="rule__mark">&#10022;</span></div>
-    <div class="footer__names" id="footerNames"></div>
-    <div class="footer__meta" id="footerMeta"></div>
+    <div class="rule" data-reveal><span class="rule__mark">&#10022;</span></div>
+    <div class="footer__names" id="footerNames" data-reveal></div>
+    <div class="footer__meta" id="footerMeta" data-reveal></div>
   </footer>
 
 </div>
 
-<script>
-  var CONFIG = <?!= configJson ?>;
-</script>
+<!-- ===================== MUSIC ===================== -->
+<div class="music-dock" id="musicDock" hidden>
+  <span class="music__hint" id="musicHint"></span>
+  <button type="button" class="music" id="musicBtn"
+          aria-pressed="false" aria-label="Play background music">
+    <span class="music__note" aria-hidden="true">&#9834;</span>
+    <span class="music__bars" aria-hidden="true"><i></i><i></i><i></i></span>
+  </button>
+</div>
+<audio id="music" loop preload="none"></audio>
+
 <?!= include('JavaScript'); ?>
 </body>
 </html>

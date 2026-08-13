@@ -45,6 +45,22 @@ var CONFIG = {
   allowEdits: true,          // re-submitting under the same name updates that
                              // guest's row instead of adding a duplicate
 
+  // ---- Atmosphere -----------------------------------------------------------
+  // All three are ignored for guests whose device asks for reduced motion.
+  animations: true,          // GSAP entrance timeline and scroll reveals
+  petals: true,              // petals drifting down the background
+  petalCount: 14,
+
+  music: {
+    enabled: true,
+    label: 'Play our song',  // the little tooltip beside the button
+    volume: 0.32,            // 0 to 1
+    // Browsers refuse to play audio until the guest interacts with the page,
+    // so nothing can start on load. true starts it on their first tap or key
+    // press anywhere; false waits until they press the music button itself.
+    startOnFirstTap: true
+  },
+
   // ---- Spreadsheet ----------------------------------------------------------
   sheetName: 'RSVPs',
   summarySheetName: 'Summary',
@@ -76,6 +92,10 @@ function getPublicConfig_() {
     rsvpDeadlineIso: CONFIG.rsvpDeadlineIso,
     rsvpDeadlineLabel: CONFIG.rsvpDeadlineLabel,
     maxPartySize: CONFIG.maxPartySize,
+    animations: CONFIG.animations,
+    petals: CONFIG.petals,
+    petalCount: CONFIG.petalCount,
+    music: CONFIG.music,
     invitationLine: CONFIG.invitationLine,
     requestLine: CONFIG.requestLine,
     closingNote: CONFIG.closingNote,

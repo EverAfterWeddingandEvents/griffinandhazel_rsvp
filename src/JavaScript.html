@@ -299,8 +299,294 @@
 
 
   /* ---------------------------------------------------------------------- */
+  /*  Motion                                                                */
+  /*                                                                        */
+  /*  The .anim class on <html> tells us GSAP loaded and the guest has not   */
+  /*  asked for reduced motion. Without it we do nothing at all — the CSS    */
+  /*  that hides these elements is scoped to the same class.                */
+  /* ---------------------------------------------------------------------- */
+
+  var animating = document.documentElement.className.indexOf('anim') > -1;
+
+  function animateHero() {
+    // Start states go in before the timeline, so nothing has a chance to
+    // render at its final position first.
+    gsap.set('.hero [data-reveal]', { y: 22 });
+    gsap.set('.monogram', { scale: .65 });
+
+    var tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+
+    tl.to('.hero__photo', { opacity: 1, duration: 1.5, ease: 'power2.out' })
+      .from('.hero__photo', { scale: 1.05, duration: 2.4, ease: 'power2.out' }, 0)
+      .to('.monogram', { opacity: 1, scale: 1, duration: .8, ease: 'back.out(1.7)' }, '-=0.9')
+      .to('#invitationLine', { opacity: 1, y: 0, duration: .7 }, '-=0.35')
+      .to('.hero__names [data-reveal]', {
+        opacity: 1, y: 0, duration: .9, stagger: .13
+      }, '-=0.4')
+      .to('.hero .rule', { opacity: 1, duration: .8 }, '-=0.5')
+      .to('#heroDate', { opacity: 1, y: 0, duration: .7 }, '-=0.45')
+      .to('#countdown', { opacity: 1, y: 0, duration: .7, onStart: countUp }, '-=0.45')
+      .to('.scroll-cue', { opacity: 1, duration: .6 }, '-=0.3');
+  }
+
+
+  /** Runs the countdown number up from zero rather than just appearing. */
+  function countUp() {
+    var strong = document.querySelector('#countdown strong');
+    var target = parseInt(strong && strong.textContent, 10);
+    if (!strong || isNaN(target) || target < 2) {
+      return;
+    }
+    var counter = { v: 0 };
+    gsap.to(counter, {
+      v: target,
+      duration: 1.6,
+      ease: 'power2.out',
+      onUpdate: function () { strong.textContent = Math.round(counter.v); }
+    });
+  }
+
+
+  /**
+   * Everything below the fold rises into place as it is scrolled to.
+   *
+   * This reveals anything whose top has passed the trigger line, rather than
+   * anything currently intersecting the viewport. The difference matters: the
+   * scroll cue is an anchor that jumps straight to the form, and anything
+   * merely observed for intersection would be skipped over and stay invisible
+   * for the rest of the visit.
+   */
+  function animateOnScroll() {
+    var items = [].slice.call(document.querySelectorAll('[data-reveal]'))
+      .filter(function (el) { return !el.closest('.hero'); });
+
+    gsap.set(items, { y: 30 });
+
+    var pending = items.slice();
+    var queued = false;
+
+    function reveal() {
+      queued = false;
+      var line = window.innerHeight * 0.88;
+      var arriving = [];
+
+      pending = pending.filter(function (el) {
+        if (el.getBoundingClientRect().top < line) {
+          arriving.push(el);
+          return false;
+        }
+        return true;
+      });
+
+      if (arriving.length) {
+        gsap.to(arriving, {
+          opacity: 1, y: 0, duration: .9, stagger: .12, ease: 'power3.out'
+        });
+      }
+      if (!pending.length) {
+        window.removeEventListener('scroll', onScroll);
+        window.removeEventListener('resize', onScroll);
+      }
+    }
+
+    function onScroll() {
+      if (!queued) {
+        queued = true;
+        requestAnimationFrame(reveal);
+      }
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    reveal();
+  }
+
+
+  /** Petals, drifting down and swaying, forever. */
+  function startPetals() {
+    if (!CONFIG.petals) {
+      return;
+    }
+    var layer = $('petals');
+    var count = CONFIG.petalCount || 12;
+    var tints = ['#E8C4B8', '#F0D6C2', '#EFE2D2', '#D9C7B4'];
+    var rand = gsap.utils.random;
+
+    for (var i = 0; i < count; i++) {
+      var petal = document.createElement('span');
+      var size = rand(7, 15);
+      petal.className = 'petal';
+      petal.style.width = size + 'px';
+      petal.style.height = (size * 0.72) + 'px';
+      petal.style.background = tints[i % tints.length];
+      layer.appendChild(petal);
+      float(petal);
+    }
+
+    function float(petal) {
+      var duration = rand(14, 26);
+
+      gsap.set(petal, { left: rand(0, 100) + 'vw', rotate: rand(0, 360) });
+
+      var tl = gsap.timeline({
+        repeat: -1,
+        onRepeat: function () {
+          gsap.set(petal, { left: rand(0, 100) + 'vw' });
+        }
+      })
+        .to(petal, { opacity: rand(0.18, 0.42), duration: 2 }, 0)
+        .to(petal, { y: '112vh', duration: duration, ease: 'none' }, 0)
+        .to(petal, {
+          x: rand(-70, 70),
+          duration: duration / 3,
+          repeat: 2,
+          yoyo: true,
+          ease: 'sine.inOut'
+        }, 0)
+        .to(petal, { rotate: '+=' + rand(180, 540), duration: duration, ease: 'none' }, 0)
+        .to(petal, { opacity: 0, duration: 3 }, duration - 3);
+
+      // Drop each petal in part-way through its fall, so the sky is not empty
+      // for the first half-minute.
+      tl.seek(rand(0, duration));
+    }
+  }
+
+
+  function initMotion() {
+    if (!animating) {
+      return;
+    }
+    animateHero();
+    animateOnScroll();
+    startPetals();
+  }
+
+
+  /* ---------------------------------------------------------------------- */
+  /*  Music                                                                 */
+  /* ---------------------------------------------------------------------- */
+
+  function initMusic() {
+    var settings = CONFIG.music || {};
+    var src = window.RSVP_MUSIC_SRC || '';
+
+    if (!settings.enabled || !src) {
+      return;
+    }
+
+    var audio = $('music');
+    var button = $('musicBtn');
+    var dock = $('musicDock');
+    var hint = $('musicHint');
+    var chosen = false;   // true once the guest has used the button themselves
+
+    audio.src = src;
+    audio.volume = typeof settings.volume === 'number' ? settings.volume : 0.32;
+    dock.hidden = false;
+    hint.textContent = settings.label || 'Play our song';
+
+    var bob = null;
+
+    if (animating) {
+      gsap.from(dock, { opacity: 0, y: 20, duration: .8, delay: 1.6, ease: 'power3.out' });
+
+      // The gentle float that draws the eye to it. It settles while the guest
+      // is reaching for it, and stops for good once they have used it — a
+      // control that never stops moving is a control that is hard to hit.
+      bob = gsap.to(button, {
+        y: -6, duration: 2.4, ease: 'sine.inOut', yoyo: true, repeat: -1, delay: 2.4
+      });
+
+      var settle = function () {
+        if (bob) { bob.pause(); }
+        gsap.to(button, { y: 0, duration: .3, ease: 'power2.out' });
+      };
+      var resume = function () {
+        if (bob && !chosen) { bob.play(); }
+      };
+
+      button.addEventListener('mouseenter', settle);
+      button.addEventListener('focus', settle);
+      button.addEventListener('mouseleave', resume);
+      button.addEventListener('blur', resume);
+
+      button.addEventListener('click', function () {
+        if (bob) { bob.kill(); bob = null; }
+        gsap.to(button, { y: 0, duration: .3 });
+      });
+    }
+
+    var showHintFor = function (ms) {
+      hint.classList.add('is-shown');
+      setTimeout(function () { hint.classList.remove('is-shown'); }, ms);
+    };
+
+    function paint(playing) {
+      button.classList.toggle('is-playing', playing);
+      button.setAttribute('aria-pressed', playing ? 'true' : 'false');
+      button.setAttribute('aria-label',
+        playing ? 'Pause background music' : 'Play background music');
+      hint.textContent = playing ? 'Now playing' : (settings.label || 'Play our song');
+    }
+
+    audio.addEventListener('play', function () { paint(true); });
+    audio.addEventListener('pause', function () { paint(false); });
+
+    function play() {
+      var attempt = audio.play();
+      if (attempt && attempt.catch) {
+        // Blocked by autoplay policy, or the file is missing. Either way the
+        // button stays where it is and the guest can try it themselves.
+        attempt.catch(function () { paint(false); });
+      }
+    }
+
+    button.addEventListener('click', function () {
+      chosen = true;
+      if (audio.paused) {
+        play();
+      } else {
+        audio.pause();
+      }
+    });
+
+    button.addEventListener('mouseenter', function () { hint.classList.add('is-shown'); });
+    button.addEventListener('mouseleave', function () { hint.classList.remove('is-shown'); });
+
+    // Nudge them once, a moment after the page settles.
+    setTimeout(function () {
+      if (audio.paused) { showHintFor(4200); }
+    }, 2600);
+
+    // Browsers will not let audio start until the guest has interacted with
+    // the page, so their first tap anywhere is the earliest chance we get.
+    if (settings.startOnFirstTap) {
+      var stopListening = function () {
+        window.removeEventListener('pointerdown', kick, true);
+        window.removeEventListener('keydown', kick, true);
+      };
+
+      var kick = function (event) {
+        // A tap on the button itself is the button's business — starting the
+        // song here too would leave its own handler to pause it again.
+        if (!(event && event.target && dock.contains(event.target))) {
+          if (!chosen && audio.paused) { play(); }
+        }
+        stopListening();
+      };
+
+      window.addEventListener('pointerdown', kick, true);
+      window.addEventListener('keydown', kick, true);
+    }
+  }
+
+
+  /* ---------------------------------------------------------------------- */
 
   render();
   wireUp();
+  initMotion();
+  initMusic();
 })();
 </script>

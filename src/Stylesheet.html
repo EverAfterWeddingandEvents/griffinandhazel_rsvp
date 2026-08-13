@@ -54,6 +54,31 @@ body::before {
 
 .page { position: relative; z-index: 1; }
 
+/* ---- Animation gate --------------------------------------------------------
+   The .anim class is only put on <html> when GSAP has loaded and the guest has
+   not asked for reduced motion. Without it nothing is hidden, so a blocked
+   script or an old browser degrades to a perfectly good static page. */
+
+.anim [data-reveal] { opacity: 0; will-change: transform, opacity; }
+.anim .hero__photo  { opacity: 0; }
+
+/* ---- Drifting petals ------------------------------------------------------- */
+
+.petals {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 2;
+}
+.petal {
+  position: absolute;
+  top: -8vh;
+  border-radius: 60% 10% 60% 10%;
+  opacity: 0;
+  will-change: transform;
+}
+
 /* ---- Type ----------------------------------------------------------------- */
 
 h1, h2, h3 { font-family: var(--serif); font-weight: 300; margin: 0; letter-spacing: .01em; }
@@ -204,7 +229,9 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 300; margin: 0; letter-spac
   text-decoration: none;
   animation: drift 2.6s ease-in-out infinite;
 }
-.scroll-cue:hover { color: var(--blush-deep); }
+.scroll-cue:hover, .scroll-cue:focus-visible { color: var(--blush-deep); }
+/* Hold still while it is being aimed at. */
+.scroll-cue:hover, .scroll-cue:focus { animation-play-state: paused; }
 @keyframes drift {
   0%, 100% { transform: translateY(0);   opacity: .55; }
   50%      { transform: translateY(7px); opacity: 1; }
@@ -543,6 +570,114 @@ input:focus, select:focus, textarea:focus {
 .closed { text-align: center; }
 .closed h3 { font-size: 2rem; margin-bottom: .6rem; }
 .closed p { color: var(--ink-soft); max-width: 440px; margin: 0 auto; }
+
+/* ---- Floating music control ------------------------------------------------ */
+
+.music-dock {
+  position: fixed;
+  right: clamp(1rem, 3vw, 2rem);
+  bottom: clamp(1rem, 3vw, 2rem);
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+}
+.music-dock[hidden] { display: none; }
+
+.music__hint {
+  font-family: var(--sans);
+  font-size: .64rem;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  background: rgba(251, 247, 241, .92);
+  border: 1px solid var(--sand);
+  border-radius: 999px;
+  padding: .42rem .85rem;
+  white-space: nowrap;
+  box-shadow: var(--shadow-sm);
+  opacity: 0;
+  transform: translateX(6px);
+  transition: opacity .4s ease, transform .4s ease;
+  pointer-events: none;
+}
+.music__hint.is-shown { opacity: 1; transform: none; }
+
+.music {
+  position: relative;
+  width: 3.4rem;
+  height: 3.4rem;
+  flex: none;
+  border-radius: 50%;
+  border: 1px solid var(--sand-deep);
+  background: var(--cream);
+  color: var(--blush-deep);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 26px -12px rgba(74, 63, 54, .55);
+  transition: color .25s ease, border-color .25s ease, background .25s ease;
+}
+.music:hover { background: var(--white); border-color: var(--blush); }
+.music:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(224, 174, 156, .4), 0 10px 26px -12px rgba(74, 63, 54, .55);
+}
+
+/* A soft ring that breathes outward while the song is playing. */
+.music::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 50%;
+  border: 1px solid var(--blush);
+  opacity: 0;
+}
+.music.is-playing::after { animation: ripple 2.4s ease-out infinite; }
+@keyframes ripple {
+  0%   { opacity: .55; transform: scale(1); }
+  100% { opacity: 0;   transform: scale(1.55); }
+}
+
+.music__note {
+  font-size: 1.25rem;
+  line-height: 1;
+  transition: opacity .2s ease, transform .2s ease;
+}
+.music.is-playing .music__note { opacity: 0; transform: scale(.6); }
+
+/* Three little equaliser bars, shown in place of the note while playing. */
+.music__bars {
+  position: absolute;
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 1.1rem;
+  opacity: 0;
+  transform: scale(.6);
+  transition: opacity .2s ease, transform .2s ease;
+}
+.music.is-playing .music__bars { opacity: 1; transform: none; }
+.music__bars i {
+  display: block;
+  width: 3px;
+  height: 40%;
+  border-radius: 2px;
+  background: var(--blush-deep);
+}
+.music.is-playing .music__bars i { animation: bounce 900ms ease-in-out infinite; }
+.music.is-playing .music__bars i:nth-child(2) { animation-duration: 700ms; animation-delay: .12s; }
+.music.is-playing .music__bars i:nth-child(3) { animation-duration: 1100ms; animation-delay: .05s; }
+@keyframes bounce {
+  0%, 100% { height: 30%; }
+  50%      { height: 100%; }
+}
+
+@media (max-width: 480px) {
+  .music { width: 3rem; height: 3rem; }
+  .music__hint { font-size: .58rem; padding: .36rem .7rem; }
+}
 
 /* ---- Footer --------------------------------------------------------------- */
 

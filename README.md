@@ -26,10 +26,13 @@ Reception to follow at Ariana Hotel · Kindly reply by December 2026
 A single page built around your engagement photos:
 
 1. **Hero** — the beach portrait, a monogram medallion, your names, the date, and
-   a live countdown ("268 days until we say I do").
+   a countdown that counts itself up ("268 days until we say I do").
 2. **The Celebration** — ceremony and reception cards beside the walking photo.
 3. **Kindly Reply** — the form itself.
 4. A handwritten-feeling thank-you screen with a confirmation code.
+
+Everything animates in as it is scrolled to, petals drift down the background,
+and a floating button in the corner plays your song.
 
 The form collects:
 
@@ -86,13 +89,20 @@ Use the **+** button next to *Files*:
 | `Stylesheet` | `src/Stylesheet.html` | HTML |
 | `JavaScript` | `src/JavaScript.html` | HTML |
 | `Assets` | `src/Assets.html` | HTML |
+| `Gsap` | `src/Gsap.html` | HTML |
+| `Audio` | `src/Audio.html` | HTML |
 
 Delete the default `Code.gs` contents before pasting, and delete any leftover
 `myFunction()`. The names must match exactly — the code looks files up by name.
 
-> `Assets.html` is large (~185 KB) because both photographs are embedded inside
-> it as text. Select all of it and paste; the editor handles it fine, it just
-> takes a second.
+> `Assets.html`, `Gsap.html` and `Audio.html` are big — about 500 KB between
+> them — because Apps Script cannot serve files, so the photographs, the
+> animation library and the song are all embedded as text. Select all and
+> paste; the editor copes, it just takes a second each.
+>
+> This is the one real drawback of the Apps Script-only route: guests download
+> all of that with the page. The custom-domain build serves them as ordinary
+> files instead, so the page itself is only 45 KB.
 
 ### 4. Run the setup once
 
@@ -149,8 +159,10 @@ python3 tools/build_site.py static --endpoint "https://script.google.com/macros/
 Use the `/exec` URL from Part B, step 5. This writes `build/site/`:
 
 ```
-build/site/index.html          the whole page, ~33 KB
-build/site/assets/*.jpg        the photographs
+build/site/index.html                     the whole page, ~45 KB
+build/site/gsap.min.js                    the animation library
+build/site/assets/*.jpg                   the photographs
+build/site/assets/wedding-placeholder.mp3 the song
 ```
 
 ### 2. Buy a domain
@@ -205,7 +217,20 @@ rsvpDeadlineIso:  '2026-12-31',   // after this day the form politely closes its
 rsvpDeadlineLabel:'December 2026',// what guests actually read
 maxPartySize:     10,             // largest number of seats one reply may claim
 allowEdits:       true,           // false records every reply as a new row
+
+animations:       true,           // entrance timeline and scroll reveals
+petals:           true,           // drifting petals
+petalCount:       14,
+music: {
+  enabled:        true,
+  label:          'Play our song',
+  volume:         0.32,
+  startOnFirstTap: true           // see "The music" below
+}
 ```
+
+All three of `animations`, `petals` and `music` are skipped automatically for
+guests whose device asks for reduced motion.
 
 When the deadline passes, the form is replaced with *"Our guest list has
 closed"* — the check also runs on the server, so a stale browser tab cannot
@@ -230,7 +255,55 @@ Then paste the regenerated `src/Assets.html` back into the script editor and
 redeploy. Drop `--optimize` if your images are already web-sized.
 
 On the static build the photos are served as ordinary files instead, which is
-why `build/site/index.html` is only 33 KB — just rebuild and re-upload.
+why `build/site/index.html` stays small — just rebuild and re-upload.
+
+---
+
+## The music
+
+The track that ships with this is a **placeholder**: a soft music-box arpeggio
+over the Canon in D, synthesised from scratch by `tools/make_music.py`. It is
+there so the player has something to play, and so there is nothing to license.
+It is meant to be replaced.
+
+### Using your own song
+
+```bash
+# drop your file in, keeping the name
+cp ~/our-song.mp3 assets/audio/wedding-placeholder.mp3
+python3 tools/build_assets.py
+```
+
+Then paste the new `src/Audio.html` into the script editor (Apps Script route),
+or rebuild and re-upload `build/site/` (custom-domain route).
+
+Two things worth keeping in mind. Trim the file to a minute or two — it is a
+background loop, not an album, and every guest downloads it. And it does need
+to be a song you have the right to publish; a wedding site is a public web page,
+so the usual rules about someone else's recording apply.
+
+### Why it does not just start playing
+
+Every modern browser refuses to play audio until the guest has interacted with
+the page. Nothing can be done about that — it is not a bug in this code, and
+`autoplay` attributes will not get around it.
+
+So the button waits, gives a small nudge after a couple of seconds, and:
+
+- `startOnFirstTap: true` (the default) starts the song on the guest's first
+  tap, click or key press anywhere on the page;
+- `startOnFirstTap: false` waits until they press the music button itself.
+
+Either way the button always shows what is happening and lets them stop it, and
+its label and `aria-pressed` state stay in step for screen readers.
+
+### Turning the motion down
+
+`animations`, `petals` and `music` in `src/Config.gs` are independent switches.
+All of them are ignored anyway for guests whose device asks for reduced motion,
+and the page renders perfectly well as a plain static document if GSAP fails to
+load for any reason — nothing is hidden that the animation engine is needed to
+bring back.
 
 ---
 
@@ -321,13 +394,18 @@ src/
   Setup.gs          spreadsheet setup, formatting, summary tab, custom menu
   Index.html        page markup
   Stylesheet.html   the design
-  JavaScript.html   form behaviour, and the two ways it can submit
-  Assets.html       GENERATED — photos as base64, for Apps Script only
+  JavaScript.html   form behaviour, animation and the music player
+  Assets.html       GENERATED — photos, for Apps Script only
+  Gsap.html         GENERATED — the animation library, for Apps Script only
+  Audio.html        GENERATED — the song, for Apps Script only
   appsscript.json   project manifest
 assets/img/         the source photographs
+assets/audio/       the song (placeholder — swap it for your own)
+vendor/             gsap.min.js, committed rather than loaded from a CDN
 tools/
-  build_assets.py   regenerates src/Assets.html from assets/img
+  build_assets.py   regenerates the three GENERATED files above
   build_site.py     preview | static — builds build/preview.html or build/site/
+  make_music.py     synthesises the placeholder track
   test_logic.js     tests the server-side logic without a Google account
 ```
 
