@@ -5,9 +5,9 @@ build_assets.py
 Apps Script cannot serve files — no images, no scripts, no audio — so everything
 the page needs is baked into HTML files it *can* serve:
 
-    assets/img/*.jpg                 ->  src/Assets.html   (base64 CSS variables)
-    vendor/gsap.min.js               ->  src/Gsap.html     (inlined <script>)
-    assets/audio/*.mp3               ->  src/Audio.html    (base64 data URI)
+    media/img/*.jpg          ->  apps-script/Assets.html  (base64 CSS variables)
+    vendor/gsap.min.js       ->  apps-script/Gsap.html    (inlined <script>)
+    media/audio/*.mp3        ->  apps-script/Audio.html   (base64 data URI)
 
 Run this again after swapping a photo, the song, or the GSAP build:
 
@@ -17,7 +17,8 @@ Optionally re-optimise the source images first (needs Pillow):
 
     python3 tools/build_assets.py --optimize
 
-The static build does not use these files at all — it serves the real assets.
+The GitHub Pages build does not use these files at all — it serves the real
+assets from the repository root.
 """
 
 import argparse
@@ -26,10 +27,10 @@ import os
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-IMG_DIR = os.path.join(ROOT, "assets", "img")
-AUDIO_DIR = os.path.join(ROOT, "assets", "audio")
+IMG_DIR = os.path.join(ROOT, "media", "img")
+AUDIO_DIR = os.path.join(ROOT, "media", "audio")
 VENDOR_DIR = os.path.join(ROOT, "vendor")
-SRC_DIR = os.path.join(ROOT, "src")
+SRC_DIR = os.path.join(ROOT, "apps-script")
 
 # CSS variable name -> file in assets/img, plus the longest edge used when
 # --optimize is passed.
@@ -96,7 +97,7 @@ def build_images(do_optimize):
 
     write("Assets.html",
           "<style>\n  :root {\n" + "\n".join(blocks) + "\n  }\n</style>\n",
-          "assets/img/")
+          "media/img/")
 
 
 def build_gsap():
@@ -124,7 +125,7 @@ def build_audio():
     print("  %-14s %7.0f KB source" % (MUSIC_FILE, raw / 1024))
     write("Audio.html",
           "<script>\n  window.RSVP_MUSIC_SRC = %s;\n</script>\n" % js_string(uri),
-          "assets/audio/" + MUSIC_FILE)
+          "media/audio/" + MUSIC_FILE)
 
 
 def js_string(value):
@@ -148,7 +149,7 @@ def main():
                 for f in ("Assets.html", "Gsap.html", "Audio.html")
                 if os.path.exists(os.path.join(SRC_DIR, f)))
     print("\ngenerated files total %.0f KB — that is the extra weight the Apps\n"
-          "Script build carries. The static build serves real files instead."
+          "Script build carries. The GitHub Pages site serves real files instead."
           % (total / 1024))
 
 

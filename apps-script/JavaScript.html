@@ -36,7 +36,15 @@
     }
 
     if (!ENDPOINT || ENDPOINT.indexOf('http') !== 0) {
-      onFail(new Error('RSVP_ENDPOINT has not been set on this page.'));
+      // The site was published before the Apps Script endpoint was filled in.
+      // Say so plainly rather than blaming the guest's connection.
+      console.error('RSVP_ENDPOINT is not set. Rebuild with: ' +
+        'python3 tools/build_site.py pages --endpoint <your /exec URL>');
+      onDone({
+        ok: false,
+        error: 'This form is not connected yet. Please let ' +
+          firstName(CONFIG.groom) + ' and ' + firstName(CONFIG.bride) + ' know.'
+      });
       return;
     }
 
