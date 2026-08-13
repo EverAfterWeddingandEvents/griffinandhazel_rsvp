@@ -141,22 +141,80 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 300; margin: 0; letter-spac
   padding: 0 1.5rem;
 }
 
-/* Monogram medallion, straddling the edge of the photograph */
+/* Monogram medallion, straddling the edge of the photograph.
+   The ring is an SVG rather than a border so it can draw itself on arrival. */
 .monogram {
+  position: relative;
   width: 5.4rem;
   height: 5.4rem;
   margin: 0 auto 1.5rem;
   border-radius: 50%;
   background: var(--cream);
-  border: 1px solid var(--sand-deep);
   box-shadow: 0 0 0 6px var(--cream);
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.monogram__ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.monogram__ring circle {
+  fill: none;
+  stroke: var(--sand-deep);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  /* start the stroke at twelve o'clock instead of three */
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+
+/* 2πr for r=48, so the whole ring is one dash we can unroll. */
+.anim .monogram__ring circle {
+  stroke-dasharray: 301.6;
+  stroke-dashoffset: 301.6;
+}
+
+.monogram__text {
+  position: relative;
   font-family: var(--serif);
   font-size: 1.5rem;
   letter-spacing: .05em;
   color: var(--ink);
+}
+.monogram__ch { display: inline-block; }
+
+/* The shimmer: a gold band inside an over-wide gradient that GSAP slides
+   across the lettering every few seconds.
+
+   The gradient sits on each glyph rather than on their container, because
+   background-clip:text cannot paint through child elements — and the
+   transparent fill it needs *does* inherit into them, so putting it on the
+   parent leaves the letters simply invisible. Each glyph is given a shared
+   coordinate space in JS so the band still reads as one sweep.
+
+   The is-foil class is only added once support has been confirmed and the
+   glyphs measured, so no JS or no support means plain ink letters. */
+.monogram__text.is-foil .monogram__ch {
+  background-image: linear-gradient(105deg,
+    var(--ink) 0%,
+    var(--ink) 42%,
+    #D9BE84 47%,
+    #F2E6C8 50%,
+    #D9BE84 53%,
+    var(--ink) 58%,
+    var(--ink) 100%);
+  /* Tiled, not no-repeat: the fill is transparent, so any part of a glyph the
+     gradient fails to cover would be invisible rather than ink. Both ends of
+     the gradient are the same ink colour and the tile is far wider than the
+     monogram, so tiling reads as continuous ink with one travelling band. */
+  background-repeat: repeat-x;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .hero__names {

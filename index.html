@@ -227,22 +227,80 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 300; margin: 0; letter-spac
   padding: 0 1.5rem;
 }
 
-/* Monogram medallion, straddling the edge of the photograph */
+/* Monogram medallion, straddling the edge of the photograph.
+   The ring is an SVG rather than a border so it can draw itself on arrival. */
 .monogram {
+  position: relative;
   width: 5.4rem;
   height: 5.4rem;
   margin: 0 auto 1.5rem;
   border-radius: 50%;
   background: var(--cream);
-  border: 1px solid var(--sand-deep);
   box-shadow: 0 0 0 6px var(--cream);
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.monogram__ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.monogram__ring circle {
+  fill: none;
+  stroke: var(--sand-deep);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  /* start the stroke at twelve o'clock instead of three */
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+
+/* 2πr for r=48, so the whole ring is one dash we can unroll. */
+.anim .monogram__ring circle {
+  stroke-dasharray: 301.6;
+  stroke-dashoffset: 301.6;
+}
+
+.monogram__text {
+  position: relative;
   font-family: var(--serif);
   font-size: 1.5rem;
   letter-spacing: .05em;
   color: var(--ink);
+}
+.monogram__ch { display: inline-block; }
+
+/* The shimmer: a gold band inside an over-wide gradient that GSAP slides
+   across the lettering every few seconds.
+
+   The gradient sits on each glyph rather than on their container, because
+   background-clip:text cannot paint through child elements — and the
+   transparent fill it needs *does* inherit into them, so putting it on the
+   parent leaves the letters simply invisible. Each glyph is given a shared
+   coordinate space in JS so the band still reads as one sweep.
+
+   The is-foil class is only added once support has been confirmed and the
+   glyphs measured, so no JS or no support means plain ink letters. */
+.monogram__text.is-foil .monogram__ch {
+  background-image: linear-gradient(105deg,
+    var(--ink) 0%,
+    var(--ink) 42%,
+    #D9BE84 47%,
+    #F2E6C8 50%,
+    #D9BE84 53%,
+    var(--ink) 58%,
+    var(--ink) 100%);
+  /* Tiled, not no-repeat: the fill is transparent, so any part of a glyph the
+     gradient fails to cover would be invisible rather than ink. Both ends of
+     the gradient are the same ink colour and the tile is far wider than the
+     monogram, so tiling reads as continuous ink with one travelling band. */
+  background-repeat: repeat-x;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .hero__names {
@@ -878,7 +936,12 @@ input:focus, select:focus, textarea:focus {
          aria-label="Griffin and Hazel on the beach"></div>
 
     <div class="hero__inner">
-      <div class="monogram" id="monogram" data-reveal></div>
+      <div class="monogram" id="monogram" data-reveal>
+        <svg class="monogram__ring" viewBox="0 0 100 100" aria-hidden="true">
+          <circle cx="50" cy="50" r="48"></circle>
+        </svg>
+        <span class="monogram__text" id="monogramText"></span>
+      </div>
 
       <p class="eyebrow" id="invitationLine" data-reveal></p>
 
@@ -1139,7 +1202,12 @@ input:focus, select:focus, textarea:focus {
 
   function render() {
     $('invitationLine').textContent = CONFIG.invitationLine;
-    $('monogram').textContent = CONFIG.monogram;
+
+    // One span per character so the letters can arrive in turn.
+    $('monogramText').innerHTML = String(CONFIG.monogram).split('').map(function (ch) {
+      return ch === ' ' ? ' ' : '<span class="monogram__ch">' + esc(ch) + '</span>';
+    }).join('');
+
     $('groomFirst').textContent = firstName(CONFIG.groom);
     $('brideFirst').textContent = firstName(CONFIG.bride);
     $('heroDate').textContent =
@@ -1373,21 +1441,29 @@ input:focus, select:focus, textarea:focus {
     // Start states go in before the timeline, so nothing has a chance to
     // render at its final position first.
     gsap.set('.hero [data-reveal]', { y: 22 });
-    gsap.set('.monogram', { scale: .65 });
+    gsap.set('.monogram', { scale: .8 });
+    gsap.set('.monogram__ch', { opacity: 0, y: 9 });
 
     var tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
 
     tl.to('.hero__photo', { opacity: 1, duration: 1.5, ease: 'power2.out' })
       .from('.hero__photo', { scale: 1.05, duration: 2.4, ease: 'power2.out' }, 0)
-      .to('.monogram', { opacity: 1, scale: 1, duration: .8, ease: 'back.out(1.7)' }, '-=0.9')
-      .to('#invitationLine', { opacity: 1, y: 0, duration: .7 }, '-=0.35')
+      // Every one of these clears the y offset set above. Animating only
+      // opacity leaves the element parked 22px low for good.
+      .to('.monogram', { opacity: 1, y: 0, scale: 1, duration: .7, ease: 'power2.out' }, '-=0.9')
+      // the ring unrolls from twelve o'clock, and the letters follow it in
+      .to('.monogram__ring circle',
+          { strokeDashoffset: 0, duration: 1.15, ease: 'power2.inOut' }, '-=0.5')
+      .to('.monogram__ch',
+          { opacity: 1, y: 0, duration: .55, stagger: .12 }, '-=0.72')
+      .to('#invitationLine', { opacity: 1, y: 0, duration: .7 }, '-=0.3')
       .to('.hero__names [data-reveal]', {
         opacity: 1, y: 0, duration: .9, stagger: .13
       }, '-=0.4')
-      .to('.hero .rule', { opacity: 1, duration: .8 }, '-=0.5')
+      .to('.hero .rule', { opacity: 1, y: 0, duration: .8 }, '-=0.5')
       .to('#heroDate', { opacity: 1, y: 0, duration: .7 }, '-=0.45')
       .to('#countdown', { opacity: 1, y: 0, duration: .7, onStart: countUp }, '-=0.45')
-      .to('.scroll-cue', { opacity: 1, duration: .6 }, '-=0.3');
+      .to('.scroll-cue', { opacity: 1, y: 0, duration: .6 }, '-=0.3');
   }
 
 
@@ -1514,6 +1590,81 @@ input:focus, select:focus, textarea:focus {
   }
 
 
+  /**
+   * A slow gold highlight travelling across the monogram, the way foil on
+   * printed stationery catches the light when the card is tilted.
+   */
+  function shimmerMonogram() {
+    var wrap = $('monogramText');
+    var chars = [].slice.call(document.querySelectorAll('.monogram__ch'));
+
+    var supported = window.CSS && CSS.supports &&
+      (CSS.supports('-webkit-background-clip', 'text') ||
+       CSS.supports('background-clip', 'text'));
+
+    if (!wrap || !chars.length || !supported) {
+      return;
+    }
+
+    var BAND = 2.5;          // gradient width, as a multiple of the monogram
+    var FROM = -1.6;         // band starts this far left of the lettering
+    var TO = 0.1;            // and finishes just past its right edge
+    var progress = { t: 0 };
+    var width = 0;
+    var offsets = [];
+
+    /**
+     * Each glyph paints its own copy of the gradient, so each is told where
+     * it sits within the whole monogram. Offsetting every glyph's background
+     * by its own position leaves one continuous band across all of them.
+     */
+    function measure() {
+      var box = wrap.getBoundingClientRect();
+      width = box.width || 1;
+      offsets = chars.map(function (ch) {
+        return ch.getBoundingClientRect().left - box.left;
+      });
+      chars.forEach(function (ch) {
+        ch.style.backgroundSize = (width * BAND) + 'px 100%';
+      });
+      paint();
+    }
+
+    function paint() {
+      var x = (FROM + (TO - FROM) * progress.t) * width;
+      for (var i = 0; i < chars.length; i++) {
+        chars[i].style.backgroundPositionX = (x - offsets[i]) + 'px';
+      }
+    }
+
+    measure();
+    wrap.classList.add('is-foil');
+
+    // Widths shift when the serif finishes loading, and again on rotation.
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(measure);
+    }
+    window.addEventListener('resize', measure);
+
+    // Position is derived from a 0-to-1 progress rather than baked-in pixels,
+    // and re-measured as each pass begins. The first measurement happens while
+    // the entrance is still scaling the medallion up, so anything captured
+    // then would leave the band running in a coordinate space a fifth too
+    // small for the rest of the evening.
+    gsap.to(progress, {
+      t: 1,
+      duration: 1.9,
+      ease: 'power2.inOut',
+      delay: 3.2,
+      repeat: -1,
+      repeatDelay: 4.6,
+      onStart: measure,
+      onRepeat: measure,
+      onUpdate: paint
+    });
+  }
+
+
   function initMotion() {
     if (!animating) {
       return;
@@ -1521,6 +1672,7 @@ input:focus, select:focus, textarea:focus {
     animateHero();
     animateOnScroll();
     startPetals();
+    shimmerMonogram();
   }
 
 
