@@ -86,7 +86,12 @@
 
   function render() {
     $('invitationLine').textContent = CONFIG.invitationLine;
-    $('monogram').textContent = CONFIG.monogram;
+
+    // One span per character so the letters can arrive in turn.
+    $('monogramText').innerHTML = String(CONFIG.monogram).split('').map(function (ch) {
+      return ch === ' ' ? ' ' : '<span class="monogram__ch">' + esc(ch) + '</span>';
+    }).join('');
+
     $('groomFirst').textContent = firstName(CONFIG.groom);
     $('brideFirst').textContent = firstName(CONFIG.bride);
     $('heroDate').textContent =
@@ -320,21 +325,29 @@
     // Start states go in before the timeline, so nothing has a chance to
     // render at its final position first.
     gsap.set('.hero [data-reveal]', { y: 22 });
-    gsap.set('.monogram', { scale: .65 });
+    gsap.set('.monogram', { scale: .8 });
+    gsap.set('.monogram__ch', { opacity: 0, y: 9 });
 
     var tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
 
     tl.to('.hero__photo', { opacity: 1, duration: 1.5, ease: 'power2.out' })
       .from('.hero__photo', { scale: 1.05, duration: 2.4, ease: 'power2.out' }, 0)
-      .to('.monogram', { opacity: 1, scale: 1, duration: .8, ease: 'back.out(1.7)' }, '-=0.9')
-      .to('#invitationLine', { opacity: 1, y: 0, duration: .7 }, '-=0.35')
+      // Every one of these clears the y offset set above. Animating only
+      // opacity leaves the element parked 22px low for good.
+      .to('.monogram', { opacity: 1, y: 0, scale: 1, duration: .7, ease: 'power2.out' }, '-=0.9')
+      // the ring unrolls from twelve o'clock, and the letters follow it in
+      .to('.monogram__ring circle',
+          { strokeDashoffset: 0, duration: 1.15, ease: 'power2.inOut' }, '-=0.5')
+      .to('.monogram__ch',
+          { opacity: 1, y: 0, duration: .55, stagger: .12 }, '-=0.72')
+      .to('#invitationLine', { opacity: 1, y: 0, duration: .7 }, '-=0.3')
       .to('.hero__names [data-reveal]', {
         opacity: 1, y: 0, duration: .9, stagger: .13
       }, '-=0.4')
-      .to('.hero .rule', { opacity: 1, duration: .8 }, '-=0.5')
+      .to('.hero .rule', { opacity: 1, y: 0, duration: .8 }, '-=0.5')
       .to('#heroDate', { opacity: 1, y: 0, duration: .7 }, '-=0.45')
       .to('#countdown', { opacity: 1, y: 0, duration: .7, onStart: countUp }, '-=0.45')
-      .to('.scroll-cue', { opacity: 1, duration: .6 }, '-=0.3');
+      .to('.scroll-cue', { opacity: 1, y: 0, duration: .6 }, '-=0.3');
   }
 
 
@@ -461,6 +474,81 @@
   }
 
 
+  /**
+   * A slow gold highlight travelling across the monogram, the way foil on
+   * printed stationery catches the light when the card is tilted.
+   */
+  function shimmerMonogram() {
+    var wrap = $('monogramText');
+    var chars = [].slice.call(document.querySelectorAll('.monogram__ch'));
+
+    var supported = window.CSS && CSS.supports &&
+      (CSS.supports('-webkit-background-clip', 'text') ||
+       CSS.supports('background-clip', 'text'));
+
+    if (!wrap || !chars.length || !supported) {
+      return;
+    }
+
+    var BAND = 2.5;          // gradient width, as a multiple of the monogram
+    var FROM = -1.6;         // band starts this far left of the lettering
+    var TO = 0.1;            // and finishes just past its right edge
+    var progress = { t: 0 };
+    var width = 0;
+    var offsets = [];
+
+    /**
+     * Each glyph paints its own copy of the gradient, so each is told where
+     * it sits within the whole monogram. Offsetting every glyph's background
+     * by its own position leaves one continuous band across all of them.
+     */
+    function measure() {
+      var box = wrap.getBoundingClientRect();
+      width = box.width || 1;
+      offsets = chars.map(function (ch) {
+        return ch.getBoundingClientRect().left - box.left;
+      });
+      chars.forEach(function (ch) {
+        ch.style.backgroundSize = (width * BAND) + 'px 100%';
+      });
+      paint();
+    }
+
+    function paint() {
+      var x = (FROM + (TO - FROM) * progress.t) * width;
+      for (var i = 0; i < chars.length; i++) {
+        chars[i].style.backgroundPositionX = (x - offsets[i]) + 'px';
+      }
+    }
+
+    measure();
+    wrap.classList.add('is-foil');
+
+    // Widths shift when the serif finishes loading, and again on rotation.
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(measure);
+    }
+    window.addEventListener('resize', measure);
+
+    // Position is derived from a 0-to-1 progress rather than baked-in pixels,
+    // and re-measured as each pass begins. The first measurement happens while
+    // the entrance is still scaling the medallion up, so anything captured
+    // then would leave the band running in a coordinate space a fifth too
+    // small for the rest of the evening.
+    gsap.to(progress, {
+      t: 1,
+      duration: 1.9,
+      ease: 'power2.inOut',
+      delay: 3.2,
+      repeat: -1,
+      repeatDelay: 4.6,
+      onStart: measure,
+      onRepeat: measure,
+      onUpdate: paint
+    });
+  }
+
+
   function initMotion() {
     if (!animating) {
       return;
@@ -468,6 +556,7 @@
     animateHero();
     animateOnScroll();
     startPetals();
+    shimmerMonogram();
   }
 
 
