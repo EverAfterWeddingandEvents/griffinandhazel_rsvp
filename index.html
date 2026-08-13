@@ -740,18 +740,6 @@ input:focus, select:focus, textarea:focus {
   margin-bottom: .6rem;
 }
 .thanks__body { color: var(--ink-soft); max-width: 460px; margin: 0 auto; }
-.thanks__code {
-  display: inline-block;
-  margin-top: 1.6rem;
-  padding: .7rem 1.4rem;
-  background: var(--linen);
-  border: 1px dashed var(--sand-deep);
-  font-family: var(--sans);
-  font-size: .78rem;
-  letter-spacing: .24em;
-  text-transform: uppercase;
-  color: var(--ink);
-}
 .thanks__again {
   display: inline-block;
   margin-top: 1.8rem;
@@ -1080,8 +1068,6 @@ input:focus, select:focus, textarea:focus {
         <div class="thanks__mark">&#10022;</div>
         <h2 class="thanks__title script" id="thanksTitle"></h2>
         <p class="thanks__body" id="thanksBody"></p>
-        <div class="thanks__code" id="thanksCode"></div>
-        <br>
         <button type="button" class="thanks__again" id="againBtn">Submit another reply</button>
       </div>
 
@@ -1400,8 +1386,6 @@ input:focus, select:focus, textarea:focus {
         'We will miss you dearly, but we are so grateful for your love and ' +
         'prayers from afar. Thank you for letting us know.';
     }
-
-    $('thanksCode').textContent = 'Confirmation · ' + result.code;
 
     $('formPane').style.display = 'none';
     $('thanksPane').classList.add('is-visible');

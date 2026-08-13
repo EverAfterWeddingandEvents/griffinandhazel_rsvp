@@ -14,8 +14,7 @@ var HEADERS = [
   'Attending',
   'Party Size',
   'Guest Names',
-  'Message to the Couple',
-  'Confirmation Code'
+  'Message to the Couple'
 ];
 
 var COL = {
@@ -25,8 +24,7 @@ var COL = {
   attending: 4,
   partySize: 5,
   guestNames: 6,
-  message: 7,
-  code: 8
+  message: 7
 };
 
 
@@ -62,7 +60,7 @@ function include(filename) {
  * Called by google.script.run when the form is served by Apps Script itself.
  *
  * @param {Object} payload  { name, attending, partySize, guestNames, message }
- * @return {Object}         { ok: true, code, name, attending, updated }
+ * @return {Object}         { ok: true, name, attending, partySize, updated }
  *                          or { ok: false, error, field }
  */
 function submitRsvp(payload) {
@@ -104,7 +102,7 @@ function handleRsvp_(payload) {
     // Honeypot: a field hidden from people but usually filled in by bots.
     // Pretend it worked rather than telling them what gave it away.
     if (trim_(payload.website)) {
-      return { ok: true, code: 'THANK-YOU', name: 'Guest', attending: false,
+      return { ok: true, name: 'Guest', attending: false,
                partySize: 0, updated: false };
     }
 
@@ -128,10 +126,6 @@ function handleRsvp_(payload) {
       var existingRow = CONFIG.allowEdits ? findExistingRow_(sheet, clean) : 0;
       var isUpdate = existingRow > 0;
 
-      var code = isUpdate
-        ? (sheet.getRange(existingRow, COL.code).getDisplayValue() || makeCode_(clean.name))
-        : makeCode_(clean.name);
-
       var row = [];
       row[COL.timestamp - 1] = now;
       row[COL.updated - 1] = isUpdate ? now : '';
@@ -140,7 +134,6 @@ function handleRsvp_(payload) {
       row[COL.partySize - 1] = clean.partySize;
       row[COL.guestNames - 1] = clean.guestNames;
       row[COL.message - 1] = clean.message;
-      row[COL.code - 1] = code;
 
       if (isUpdate) {
         // Keep the original timestamp; only stamp "Last Updated".
@@ -154,7 +147,6 @@ function handleRsvp_(payload) {
 
       return {
         ok: true,
-        code: code,
         name: clean.name,
         attending: clean.attending,
         partySize: clean.partySize,
@@ -267,16 +259,6 @@ function findExistingRow_(sheet, clean) {
 
 function normalizeName_(v) {
   return String(v == null ? '' : v).toLowerCase().replace(/[^a-z0-9]+/g, '');
-}
-
-
-/**
- * A short, human-readable confirmation code, e.g. "GAM-4821".
- */
-function makeCode_(name) {
-  var letters = String(name).toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3) || 'RSV';
-  var digits = String(Math.floor(1000 + Math.random() * 9000));
-  return letters + '-' + digits;
 }
 
 

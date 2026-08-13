@@ -32,7 +32,7 @@ A single page built around your engagement photos:
    a countdown that counts itself up ("268 days until we say I do").
 2. **The Celebration** — ceremony and reception cards beside the walking photo.
 3. **Kindly Reply** — the form itself.
-4. A handwritten-feeling thank-you screen with a confirmation code.
+4. A handwritten-feeling thank-you screen.
 
 Everything animates in as it is scrolled to, petals drift down the background,
 and a floating button in the corner plays your song.
@@ -368,9 +368,9 @@ colours and copy quickly.
 node tools/test_logic.js     # 38 assertions, no Google account needed
 ```
 
-Covers field validation, the duplicate-reply matching, confirmation codes, the
-deadline cut-off, the honeypot, and the `doPost` endpoint — with the Apps Script
-services stubbed out.
+Covers field validation, the duplicate-reply matching, the deadline cut-off,
+the honeypot, and the `doPost` endpoint — with the Apps Script services stubbed
+out.
 
 ---
 
@@ -397,7 +397,7 @@ repository.
 **RSVPs** tab — one row per guest:
 
 `Timestamp · Last Updated · Full Name · Attending · Party Size · Guest Names ·
-Message to the Couple · Confirmation Code`
+Message to the Couple`
 
 *Attending* is colour-coded green for Yes and blush for No. *Last Updated* is
 filled in only when someone changed an earlier reply.

@@ -2,8 +2,8 @@
  * test_logic.js
  * -----------------------------------------------------------------------------
  * Exercises the pure server-side logic in Config.gs and Code.gs (validation,
- * duplicate matching, confirmation codes, the RSVP deadline) outside of Google,
- * with the Apps Script services stubbed out.
+ * duplicate matching, the RSVP deadline) outside of Google, with the Apps
+ * Script services stubbed out.
  *
  *     node tools/test_logic.js
  */
@@ -62,10 +62,6 @@ check('guest names truncated',      V({name:'J C', attending:'yes', partySize:'2
 // --- helpers ---------------------------------------------------------------
 check('name normalised for matching', ctx.normalizeName_('  Juan  DELA cruz '), 'juandelacruz');
 check('normalise handles null',       ctx.normalizeName_(null), '');
-const code = ctx.makeCode_('Griffin Gamallo');
-check('code shape', /^[A-Z]{3}-\d{4}$/.test(code), true);
-check('code initials', code.slice(0, 3), 'GRI');
-check('code falls back without letters', ctx.makeCode_('12345').slice(0, 3), 'RSV');
 
 // --- deadline --------------------------------------------------------------
 const realDate = Date;
@@ -77,9 +73,9 @@ ctx.Date = realDate;
 
 // --- findExistingRow_ against a fake sheet ---------------------------------
 const rows = [
-  //  ts  upd  name             attending party names msg  code
-  ['t','', 'Juan Dela Cruz', 'Yes', 2, '', '', 'JUA-1111'],
-  ['t','', 'Maria Santos',   'No',  0, '', '', 'MAR-2222'],
+  //  ts  upd  name             attending party names msg
+  ['t','', 'Juan Dela Cruz', 'Yes', 2, '', ''],
+  ['t','', 'Maria Santos',   'No',  0, '', ''],
 ];
 const fakeSheet = {
   getLastRow: () => rows.length + 1,
@@ -103,7 +99,7 @@ ctx.ContentService = {
 const trap = ctx.handleRsvp_({ name: 'Spam Bot', attending: 'yes', partySize: '1',
                                website: 'http://buy-cheap-things.example' });
 check('honeypot short-circuits',      trap.ok, true);
-check('honeypot gives nothing away',  trap.code, 'THANK-YOU');
+check('honeypot gives nothing away',  [trap.name, trap.partySize], ['Guest', 0]);
 
 const post = body => JSON.parse(ctx.doPost({ postData: { contents: body } }).text);
 

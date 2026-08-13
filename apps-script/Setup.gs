@@ -70,7 +70,7 @@ function formatRsvpSheet_(sheet) {
   sheet.setFrozenRows(1);
 
   // Column widths
-  var widths = [150, 150, 230, 100, 95, 280, 400, 130];
+  var widths = [150, 150, 230, 100, 95, 280, 400];
   for (var i = 0; i < widths.length; i++) {
     sheet.setColumnWidth(i + 1, widths[i]);
   }
