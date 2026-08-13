@@ -453,7 +453,9 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 300; margin: 0; letter-spac
 
 .field { margin-bottom: 1.5rem; }
 
-.field label,
+/* Direct children only. The attendance cards are labels too, and this rule
+   would otherwise force them uppercase and override their colour coding. */
+.field > label,
 .fieldset__legend {
   display: block;
   font-size: .70rem;
@@ -510,58 +512,115 @@ input:focus, select:focus, textarea:focus {
 }
 .field--error .field__error { display: block; }
 
-/* Attendance choice */
-.choices { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: stretch; }
-.choice { position: relative; display: flex; }
+/* ---- Attendance choice -----------------------------------------------------
+   Stacked radio cards. Each carries a real radio dot and a tick, because the
+   earlier side-by-side panels gave no sign they were selectable — and once
+   selected, looked almost identical to the one that was not. */
+
+.choices { display: grid; gap: .85rem; }
+
+.choice { position: relative; display: block; }
+
+/* Hidden from view but still focusable, so arrow keys and screen readers
+   behave exactly as they would with a plain radio group. */
 .choice input {
   position: absolute;
-  opacity: 0;
-  width: 100%;
-  height: 100%;
+  width: 1px;
+  height: 1px;
   margin: 0;
-  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
 }
+
 .choice__box {
-  flex: 1;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  min-height: 108px;
-  text-align: center;
-  padding: 1.25rem 1rem;
+  gap: 1rem;
+  padding: 1.15rem 1.25rem;
   border: 1px solid var(--sand);
   border-radius: 3px;
   background: var(--cream);
-  transition: all .2s ease;
   cursor: pointer;
+  transition: border-color .2s ease, background .2s ease,
+              box-shadow .2s ease, transform .2s ease;
 }
-.choice__box strong {
+.choice__box:hover { border-color: var(--sand-deep); background: var(--white); }
+
+/* The radio itself. currentColor comes from .choice--yes / .choice--no. */
+.choice__dot {
+  position: relative;
+  flex: none;
+  width: 1.3rem;
+  height: 1.3rem;
+  border-radius: 50%;
+  border: 1px solid var(--sand-deep);
+  background: var(--white);
+  transition: border-color .2s ease;
+}
+.choice__dot::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: currentColor;
+  transform: scale(0);
+  transition: transform .22s cubic-bezier(.34, 1.56, .64, 1);
+}
+
+.choice__text { flex: 1; min-width: 0; }
+.choice__text strong {
   display: block;
   font-family: var(--serif);
-  font-size: 1.3rem;
+  font-size: 1.28rem;
   font-weight: 400;
-  line-height: 1.2;
+  line-height: 1.25;
+  letter-spacing: .01em;
+  text-transform: none;
   color: var(--ink);
-  margin-bottom: .35rem;
 }
-.choice__box span {
-  font-size: .74rem;
-  letter-spacing: .12em;
+.choice__text span {
+  display: block;
+  margin-top: .18rem;
+  font-size: .66rem;
+  letter-spacing: .2em;
   text-transform: uppercase;
   color: var(--ink-soft);
 }
-.choice input:focus-visible + .choice__box { box-shadow: 0 0 0 3px rgba(224, 174, 156, .3); }
+
+.choice__tick {
+  flex: none;
+  font-size: 1.05rem;
+  line-height: 1;
+  opacity: 0;
+  transform: scale(.4);
+  transition: opacity .2s ease, transform .25s cubic-bezier(.34, 1.56, .64, 1);
+}
+
+.choice--yes { color: var(--sage-deep); }
+.choice--no  { color: var(--blush-deep); }
+
+/* Selected. The border grows to 2px and the padding loses a pixel to match,
+   so nothing shifts as you move between the two. */
 .choice input:checked + .choice__box {
-  border-color: var(--sage-deep);
-  background: #EFF3EC;
-  box-shadow: inset 0 0 0 1px var(--sage-deep);
+  border-width: 2px;
+  padding: calc(1.15rem - 1px) calc(1.25rem - 1px);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px -16px rgba(74, 63, 54, .55);
 }
-.choice--no input:checked + .choice__box {
-  border-color: var(--blush-deep);
-  background: #FAF0EC;
-  box-shadow: inset 0 0 0 1px var(--blush-deep);
+.choice input:checked + .choice__box .choice__dot { border-color: currentColor; }
+.choice input:checked + .choice__box .choice__dot::after { transform: scale(1); }
+.choice input:checked + .choice__box .choice__tick { opacity: 1; transform: none; }
+
+.choice--yes input:checked + .choice__box { border-color: var(--sage-deep); background: #EFF3EC; }
+.choice--no  input:checked + .choice__box { border-color: var(--blush-deep); background: #FAF0EC; }
+
+.choice input:focus-visible + .choice__box {
+  border-color: currentColor;
+  box-shadow: 0 0 0 3px rgba(224, 174, 156, .35);
 }
+
+/* "Please choose one" turns both cards, since neither is picked yet. */
+.field--error .choice__box { border-color: #C4705C; }
 
 .reveal {
   max-height: 0;
@@ -800,10 +859,6 @@ input:focus, select:focus, textarea:focus {
   .form-card { padding: 2.2rem 1.4rem 2rem; }
 }
 
-@media (max-width: 420px) {
-  .choices { grid-template-columns: 1fr; }
-}
-
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
@@ -905,15 +960,24 @@ input:focus, select:focus, textarea:focus {
               <label class="choice choice--yes">
                 <input type="radio" name="attending" value="yes">
                 <span class="choice__box">
-                  <strong>Joyfully Accepts</strong>
-                  <span>I'll be there</span>
+                  <span class="choice__dot" aria-hidden="true"></span>
+                  <span class="choice__text">
+                    <strong>Yes, I'll be there</strong>
+                    <span>Joyfully accepts</span>
+                  </span>
+                  <span class="choice__tick" aria-hidden="true">&#10003;</span>
                 </span>
               </label>
+
               <label class="choice choice--no">
                 <input type="radio" name="attending" value="no">
                 <span class="choice__box">
-                  <strong>Regretfully Declines</strong>
-                  <span>Celebrating from afar</span>
+                  <span class="choice__dot" aria-hidden="true"></span>
+                  <span class="choice__text">
+                    <strong>Sorry, I can't make it</strong>
+                    <span>Regretfully declines</span>
+                  </span>
+                  <span class="choice__tick" aria-hidden="true">&#10003;</span>
                 </span>
               </label>
             </div>
