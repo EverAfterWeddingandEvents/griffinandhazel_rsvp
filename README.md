@@ -294,17 +294,18 @@ git add -A && git commit -m "New photos" && git push
 
 ## The music
 
-The track that ships with this is a **placeholder**: a soft music-box arpeggio
-over the Canon in D, synthesised from scratch by `tools/make_music.py`. It is
-there so the player has something to play, and so there is nothing to license.
-It is meant to be replaced.
+The track the site plays is `media/audio/goodness-of-god.mp3`, named in
+`MUSIC_FILE` at the top of `tools/build_assets.py`.
 
-### Using your own song
+`tools/make_music.py` can still synthesise a royalty-free placeholder — a soft
+music-box arpeggio over the Canon in D — if you ever need something unlicensed
+to test with.
+
+### Using a different song
 
 ```bash
-# drop your file in, keeping the name
-cp ~/our-song.mp3 media/audio/wedding-placeholder.mp3
-python3 tools/build_assets.py
+cp ~/our-song.mp3 media/audio/our-song.mp3
+# then point MUSIC_FILE in tools/build_assets.py at the new filename
 ```
 
 Then rebuild and push:

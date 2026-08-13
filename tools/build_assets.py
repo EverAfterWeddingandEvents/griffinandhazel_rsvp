@@ -39,7 +39,7 @@ ASSETS = [
     ("--img-beach", "couple-beach.jpg", 900),
 ]
 
-MUSIC_FILE = "wedding-placeholder.mp3"
+MUSIC_FILE = "goodness-of-god.mp3"
 GSAP_FILE = "gsap.min.js"
 
 MIME = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png",

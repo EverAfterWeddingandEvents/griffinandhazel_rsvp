@@ -19,7 +19,7 @@ files there and touches nothing else:
     gsap.min.js
     assets/couple-portrait.jpg
     assets/couple-beach.jpg
-    assets/wedding-placeholder.mp3
+    assets/<MUSIC_FILE>.mp3
 
 Commit them and push to main; the site updates within a minute or two.
 """
