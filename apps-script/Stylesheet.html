@@ -511,6 +511,21 @@ input:focus, select:focus, textarea:focus {
 }
 .field--error .field__error { display: block; }
 
+/* ---- Names in the party ----------------------------------------------------
+   One row per extra seat, built by the script when the headcount changes. The
+   ordinal sits above its box so long names still get the full column width. */
+
+.guests { display: grid; gap: .7rem; }
+.guest__label {
+  display: block;
+  font-size: .66rem;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  opacity: .8;
+  margin-bottom: .3rem;
+}
+
 /* ---- Attendance choice -----------------------------------------------------
    Stacked radio cards. Each carries a real radio dot and a tick, because the
    earlier side-by-side panels gave no sign they were selectable — and once

@@ -41,7 +41,7 @@ var CONFIG = {
   rsvpDeadlineLabel: 'December 2026',
 
   // ---- Form behaviour -------------------------------------------------------
-  maxPartySize: 10,          // largest number of seats one submission may claim
+  maxPartySize: 5,           // largest number of seats one submission may claim
   allowEdits: true,          // re-submitting under the same name updates that
                              // guest's row instead of adding a duplicate
 

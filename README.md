@@ -43,8 +43,8 @@ The form collects:
 | --- | --- | --- |
 | Full name | yes | |
 | Joyfully Accepts / Regretfully Declines | yes | |
-| Number attending | when accepting | 1 – 10, configurable |
-| Names in your party | no | one per line, for place cards |
+| Number attending | when accepting | 1 – 5, configurable |
+| Names in your party | no | a box per extra seat, for place cards |
 | A message for Griffin & Hazel | no | up to 1000 characters |
 
 It is open to anyone with the link, and no contact details are collected — just
@@ -241,7 +241,7 @@ A few worth knowing:
 ```js
 rsvpDeadlineIso:  '2026-12-31',   // after this day the form politely closes itself
 rsvpDeadlineLabel:'December 2026',// what guests actually read
-maxPartySize:     10,             // largest number of seats one reply may claim
+maxPartySize:     5,              // largest number of seats one reply may claim
 allowEdits:       true,           // false records every reply as a new row
 
 animations:       true,           // entrance timeline and scroll reveals
