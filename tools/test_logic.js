@@ -40,11 +40,11 @@ check('81-char name rejected',      V({name:'x'.repeat(81), attending:'yes'}).fi
 check('missing attendance rejected',V({name:'Juan Cruz'}).field, 'attending');
 check('bogus attendance rejected',  V({name:'Juan Cruz', attending:'maybe'}).field, 'attending');
 check('party size 0 rejected',      V({name:'Juan Cruz', attending:'yes', partySize:'0'}).field, 'partySize');
-check('party size 11 rejected',     V({name:'Juan Cruz', attending:'yes', partySize:'11'}).field, 'partySize');
-check('party size 10 accepted',     V({name:'Juan Cruz', attending:'yes', partySize:'10'}).partySize, 10);
+check('party size 6 rejected',      V({name:'Juan Cruz', attending:'yes', partySize:'6'}).field, 'partySize');
+check('party size 5 accepted',      V({name:'Juan Cruz', attending:'yes', partySize:'5'}).partySize, 5);
 
 const yes = V({name:'  Juan   Dela  Cruz ',
-               attending:'yes', partySize:'3', guestNames:'A\nB', message:'Congrats!'});
+               attending:'yes', partySize:'3', guestNames:'A, B', message:'Congrats!'});
 check('name whitespace collapsed',  yes.name, 'Juan Dela Cruz');
 check('contact fields dropped',     [yes.email, yes.phone], [undefined, undefined]);
 check('attending is boolean',       yes.attending, true);

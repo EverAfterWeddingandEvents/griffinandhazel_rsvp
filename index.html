@@ -51,7 +51,7 @@
   },
   "rsvpDeadlineIso": "2026-12-31",
   "rsvpDeadlineLabel": "December 2026",
-  "maxPartySize": 10,
+  "maxPartySize": 5,
   "invitationLine": "Together with their families",
   "requestLine": "request the honour of your presence",
   "closingNote": "We cannot wait to celebrate with you.",
@@ -602,6 +602,21 @@ input:focus, select:focus, textarea:focus {
 }
 .field--error .field__error { display: block; }
 
+/* ---- Names in the party ----------------------------------------------------
+   One row per extra seat, built by the script when the headcount changes. The
+   ordinal sits above its box so long names still get the full column width. */
+
+.guests { display: grid; gap: .7rem; }
+.guest__label {
+  display: block;
+  font-size: .66rem;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  opacity: .8;
+  margin-bottom: .3rem;
+}
+
 /* ---- Attendance choice -----------------------------------------------------
    Stacked radio cards. Each carries a real radio dot and a tick, because the
    earlier side-by-side panels gave no sign they were selectable — and once
@@ -1084,9 +1099,9 @@ input:focus, select:focus, textarea:focus {
             </div>
 
             <div class="field" id="f-guestNames">
-              <label for="guestNames">Names in Your Party</label>
-              <textarea id="guestNames" name="guestNames" maxlength="500"
-                        placeholder="One name per line"></textarea>
+              <span class="fieldset__legend" id="guestNamesLabel">Names in Your Party</span>
+              <div class="guests" id="guestNameList" role="group"
+                   aria-labelledby="guestNamesLabel"></div>
               <span class="hint">So we can set your place cards correctly.</span>
             </div>
           </div>
@@ -1422,6 +1437,65 @@ input:focus, select:focus, textarea:focus {
   }
 
 
+  /* ---------------------------------------------------------------------- */
+  /*  Names in the party                                                    */
+  /*                                                                        */
+  /*  One box per extra seat: choose 5 and four boxes appear, since the      */
+  /*  first seat belongs to whoever is filling the form in. Boxes that are   */
+  /*  already on the page are left alone when the count changes, so a name   */
+  /*  typed before a correction to the headcount is not thrown away.         */
+  /* ---------------------------------------------------------------------- */
+
+  function guestNameInputs() {
+    return Array.prototype.slice.call($('guestNameList').getElementsByTagName('input'));
+  }
+
+  function guestNameRow(seat) {
+    var row = document.createElement('div');
+    row.className = 'guest';
+
+    var label = document.createElement('label');
+    label.className = 'guest__label';
+    label.setAttribute('for', 'guestName' + seat);
+    label.textContent = 'Guest ' + seat;
+
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.id = 'guestName' + seat;
+    input.className = 'guest__input';
+    input.maxLength = 80;
+    input.placeholder = 'Full name';
+    input.autocomplete = 'off';
+
+    row.appendChild(label);
+    row.appendChild(input);
+    return row;
+  }
+
+  function renderGuestNames() {
+    var list = $('guestNameList');
+    var seats = parseInt($('partySize').value, 10);
+    var wanted = Math.max(0, (isNaN(seats) ? 1 : seats) - 1);
+    var rows = guestNameInputs();
+
+    for (var i = rows.length; i > wanted; i--) {
+      list.removeChild(rows[i - 1].parentNode);
+    }
+    for (var j = rows.length; j < wanted; j++) {
+      list.appendChild(guestNameRow(j + 2));   // guest 1 is the person replying
+    }
+
+    $('f-guestNames').style.display = wanted ? '' : 'none';
+  }
+
+  function guestNamesValue() {
+    return guestNameInputs()
+      .map(function (input) { return input.value.trim(); })
+      .filter(Boolean)
+      .join(', ');
+  }
+
+
   function wireUp() {
     // Show the party fields only when someone is coming
     Array.prototype.forEach.call(
@@ -1433,6 +1507,10 @@ input:focus, select:focus, textarea:focus {
         });
       }
     );
+
+    // A box for every seat beyond the guest's own
+    $('partySize').addEventListener('change', renderGuestNames);
+    renderGuestNames();
 
     // Live character count on the message
     $('message').addEventListener('input', function () {
@@ -1452,7 +1530,7 @@ input:focus, select:focus, textarea:focus {
       name: $('name').value,
       attending: attendingValue(),
       partySize: $('partySize').value,
-      guestNames: $('guestNames').value,
+      guestNames: guestNamesValue(),
       message: $('message').value,
       website: $('website').value
     };
@@ -1525,6 +1603,7 @@ input:focus, select:focus, textarea:focus {
   function resetForm() {
     $('rsvpForm').reset();
     $('partyReveal').classList.remove('is-open');
+    renderGuestNames();          // reset() puts the count back to one seat
     $('msgCount').textContent = '0';
     clearErrors();
     $('thanksPane').classList.remove('is-visible');

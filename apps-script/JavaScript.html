@@ -280,6 +280,65 @@
   }
 
 
+  /* ---------------------------------------------------------------------- */
+  /*  Names in the party                                                    */
+  /*                                                                        */
+  /*  One box per extra seat: choose 5 and four boxes appear, since the      */
+  /*  first seat belongs to whoever is filling the form in. Boxes that are   */
+  /*  already on the page are left alone when the count changes, so a name   */
+  /*  typed before a correction to the headcount is not thrown away.         */
+  /* ---------------------------------------------------------------------- */
+
+  function guestNameInputs() {
+    return Array.prototype.slice.call($('guestNameList').getElementsByTagName('input'));
+  }
+
+  function guestNameRow(seat) {
+    var row = document.createElement('div');
+    row.className = 'guest';
+
+    var label = document.createElement('label');
+    label.className = 'guest__label';
+    label.setAttribute('for', 'guestName' + seat);
+    label.textContent = 'Guest ' + seat;
+
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.id = 'guestName' + seat;
+    input.className = 'guest__input';
+    input.maxLength = 80;
+    input.placeholder = 'Full name';
+    input.autocomplete = 'off';
+
+    row.appendChild(label);
+    row.appendChild(input);
+    return row;
+  }
+
+  function renderGuestNames() {
+    var list = $('guestNameList');
+    var seats = parseInt($('partySize').value, 10);
+    var wanted = Math.max(0, (isNaN(seats) ? 1 : seats) - 1);
+    var rows = guestNameInputs();
+
+    for (var i = rows.length; i > wanted; i--) {
+      list.removeChild(rows[i - 1].parentNode);
+    }
+    for (var j = rows.length; j < wanted; j++) {
+      list.appendChild(guestNameRow(j + 2));   // guest 1 is the person replying
+    }
+
+    $('f-guestNames').style.display = wanted ? '' : 'none';
+  }
+
+  function guestNamesValue() {
+    return guestNameInputs()
+      .map(function (input) { return input.value.trim(); })
+      .filter(Boolean)
+      .join(', ');
+  }
+
+
   function wireUp() {
     // Show the party fields only when someone is coming
     Array.prototype.forEach.call(
@@ -291,6 +350,10 @@
         });
       }
     );
+
+    // A box for every seat beyond the guest's own
+    $('partySize').addEventListener('change', renderGuestNames);
+    renderGuestNames();
 
     // Live character count on the message
     $('message').addEventListener('input', function () {
@@ -310,7 +373,7 @@
       name: $('name').value,
       attending: attendingValue(),
       partySize: $('partySize').value,
-      guestNames: $('guestNames').value,
+      guestNames: guestNamesValue(),
       message: $('message').value,
       website: $('website').value
     };
@@ -383,6 +446,7 @@
   function resetForm() {
     $('rsvpForm').reset();
     $('partyReveal').classList.remove('is-open');
+    renderGuestNames();          // reset() puts the count back to one seat
     $('msgCount').textContent = '0';
     clearErrors();
     $('thanksPane').classList.remove('is-visible');
