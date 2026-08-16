@@ -131,61 +131,112 @@
             <p class="field__error" id="e-name"></p>
           </div>
 
-          <div class="field" id="f-attending">
-            <span class="fieldset__legend">Will you be joining us? <span class="req">*</span></span>
-            <div class="choices" role="radiogroup" aria-label="Will you be joining us?">
-              <label class="choice choice--yes">
-                <input type="radio" name="attending" value="yes">
-                <span class="choice__box">
-                  <span class="choice__dot" aria-hidden="true"></span>
-                  <span class="choice__text">
-                    <strong>Yes, I'll be there</strong>
-                    <span>Joyfully accepts</span>
+          <!-- One question at a time. Each step opens itself once the step
+               above it has an answer; the script does the opening. -->
+          <div class="reveal" id="step-attending">
+            <div class="field" id="f-attending">
+              <span class="fieldset__legend">Will you be joining us? <span class="req">*</span></span>
+              <div class="choices" role="radiogroup" aria-label="Will you be joining us?">
+                <label class="choice choice--yes">
+                  <input type="radio" name="attending" value="yes">
+                  <span class="choice__box">
+                    <span class="choice__dot" aria-hidden="true"></span>
+                    <span class="choice__text">
+                      <strong>Yes, I'll be there</strong>
+                      <span>Joyfully accepts</span>
+                    </span>
+                    <span class="choice__tick" aria-hidden="true">&#10003;</span>
                   </span>
-                  <span class="choice__tick" aria-hidden="true">&#10003;</span>
-                </span>
-              </label>
+                </label>
 
-              <label class="choice choice--no">
-                <input type="radio" name="attending" value="no">
-                <span class="choice__box">
-                  <span class="choice__dot" aria-hidden="true"></span>
-                  <span class="choice__text">
-                    <strong>Sorry, I can't make it</strong>
-                    <span>Regretfully declines</span>
+                <label class="choice choice--no">
+                  <input type="radio" name="attending" value="no">
+                  <span class="choice__box">
+                    <span class="choice__dot" aria-hidden="true"></span>
+                    <span class="choice__text">
+                      <strong>Sorry, I can't make it</strong>
+                      <span>Regretfully declines</span>
+                    </span>
+                    <span class="choice__tick" aria-hidden="true">&#10003;</span>
                   </span>
-                  <span class="choice__tick" aria-hidden="true">&#10003;</span>
-                </span>
-              </label>
+                </label>
+              </div>
+              <p class="field__error" id="e-attending"></p>
             </div>
-            <p class="field__error" id="e-attending"></p>
           </div>
 
-          <div class="reveal" id="partyReveal">
+          <div class="reveal" id="step-companions">
+            <div class="field" id="f-companions">
+              <span class="fieldset__legend" id="companionsLegend">
+                Will anyone be coming with you? <span class="req">*</span>
+              </span>
+              <div class="choices" role="radiogroup" aria-labelledby="companionsLegend">
+                <label class="choice choice--yes">
+                  <input type="radio" name="companions" value="yes">
+                  <span class="choice__box">
+                    <span class="choice__dot" aria-hidden="true"></span>
+                    <span class="choice__text">
+                      <strong>Yes, I'm bringing someone</strong>
+                      <span id="companionsYesHint"></span>
+                    </span>
+                    <span class="choice__tick" aria-hidden="true">&#10003;</span>
+                  </span>
+                </label>
+
+                <label class="choice choice--no">
+                  <input type="radio" name="companions" value="no">
+                  <span class="choice__box">
+                    <span class="choice__dot" aria-hidden="true"></span>
+                    <span class="choice__text">
+                      <strong>No, just me</strong>
+                      <span>One seat</span>
+                    </span>
+                    <span class="choice__tick" aria-hidden="true">&#10003;</span>
+                  </span>
+                </label>
+              </div>
+              <p class="field__error" id="e-companions"></p>
+            </div>
+          </div>
+
+          <div class="reveal" id="step-party">
             <div class="field" id="f-partySize">
-              <label for="partySize">Number Attending <span class="req">*</span></label>
-              <select id="partySize" name="partySize"></select>
-              <span class="hint">Including yourself.</span>
+              <span class="fieldset__legend" id="companionCountLegend">
+                How many are coming with you?
+              </span>
+              <div class="counter" role="group" aria-labelledby="companionCountLegend">
+                <button type="button" class="counter__btn" id="companionMinus"
+                        aria-label="One fewer companion">&minus;</button>
+                <span class="counter__value">
+                  <strong id="companionCount">1</strong>
+                  <span id="companionCountWord">companion</span>
+                </span>
+                <button type="button" class="counter__btn" id="companionPlus"
+                        aria-label="One more companion">+</button>
+              </div>
+              <span class="hint" id="seatsHint" aria-live="polite"></span>
               <p class="field__error" id="e-partySize"></p>
             </div>
 
             <div class="field" id="f-guestNames">
-              <span class="fieldset__legend" id="guestNamesLabel">Names in Your Party</span>
+              <span class="fieldset__legend" id="guestNamesLabel">Who Is Coming With You?</span>
               <div class="guests" id="guestNameList" role="group"
                    aria-labelledby="guestNamesLabel"></div>
               <span class="hint">So we can set your place cards correctly.</span>
             </div>
           </div>
 
-          <div class="field" id="f-message">
-            <label for="message">A Message for Griffin &amp; Hazel</label>
-            <textarea id="message" name="message" maxlength="1000"
-                      placeholder="Share a wish, a blessing, or a favourite memory..."></textarea>
-            <span class="hint"><span id="msgCount">0</span> / 1000</span>
-          </div>
+          <div class="reveal" id="step-message">
+            <div class="field" id="f-message">
+              <label for="message">A Message for Griffin &amp; Hazel</label>
+              <textarea id="message" name="message" maxlength="1000"
+                        placeholder="Share a wish, a blessing, or a favourite memory..."></textarea>
+              <span class="hint"><span id="msgCount">0</span> / 1000</span>
+            </div>
 
-          <button type="submit" class="btn" id="submitBtn">Send Our Reply</button>
-          <div class="form-error" id="formError"></div>
+            <button type="submit" class="btn" id="submitBtn">Send Our Reply</button>
+            <div class="form-error" id="formError"></div>
+          </div>
         </form>
       </div>
 

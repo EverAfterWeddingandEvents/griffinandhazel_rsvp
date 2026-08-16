@@ -37,15 +37,21 @@ A single page built around your engagement photos:
 Everything animates in as it is scrolled to, petals drift down the background,
 and a floating button in the corner plays your song.
 
-The form collects:
+The form asks one question at a time. It opens as a single name box, and each
+answer opens the next question underneath it — decline and the party questions
+never appear at all:
 
-| Field | Required | Notes |
+| Step | Required | Notes |
 | --- | --- | --- |
-| Full name | yes | |
-| Joyfully Accepts / Regretfully Declines | yes | |
-| Number attending | when accepting | 1 – 5, configurable |
-| Names in your party | no | a box per extra seat, for place cards |
+| Full name | yes | typing it opens the next question |
+| Joyfully Accepts / Regretfully Declines | yes | declining skips straight to the message |
+| Is anyone coming with you? | when accepting | yes / no |
+| How many | when bringing someone | a tap counter, 1 – 4 companions |
+| Their names | no | a box each, for place cards |
 | A message for Griffin & Hazel | no | up to 1000 characters |
+
+The counter cannot go past `maxPartySize` (5 seats, so 4 companions), and the
+seats it adds up to are shown as the guest taps.
 
 It is open to anyone with the link, and no contact details are collected — just
 the name, the answer, and the headcount. Nothing is emailed; everything is

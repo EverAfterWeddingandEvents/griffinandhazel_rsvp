@@ -727,13 +727,79 @@ input:focus, select:focus, textarea:focus {
 /* "Please choose one" turns both cards, since neither is picked yet. */
 .field--error .choice__box { border-color: #C4705C; }
 
+/* ---- Steps -----------------------------------------------------------------
+   Each question sits in one of these and opens when the one above it has an
+   answer. The script sets max-height as it opens — a fixed cap here would clip
+   the party step, which grows a name box per companion after it is open. */
+
 .reveal {
   max-height: 0;
   opacity: 0;
   overflow: hidden;
   transition: max-height .45s ease, opacity .35s ease;
 }
-.reveal.is-open { max-height: 620px; opacity: 1; }
+.reveal.is-open { opacity: 1; }
+
+/* ---- Companion counter -----------------------------------------------------
+   Tapping is easier than typing on a phone, and the two buttons cannot produce
+   a number the sheet would reject. They disable themselves at either end. */
+
+.counter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.1rem;
+  max-width: 15rem;
+  padding: .5rem .6rem;
+  border: 1px solid var(--sand);
+  border-radius: 3px;
+  background: var(--cream);
+}
+
+.counter__btn {
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  font-family: var(--sans);
+  font-size: 1.35rem;
+  line-height: 1;
+  color: var(--ink);
+  background: var(--white);
+  border: 1px solid var(--sand-deep);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: border-color .2s ease, color .2s ease,
+              background .2s ease, transform .2s ease;
+}
+.counter__btn:hover:not(:disabled) {
+  border-color: var(--blush);
+  color: var(--blush-deep);
+  transform: translateY(-1px);
+}
+.counter__btn:active:not(:disabled) { transform: none; }
+.counter__btn:focus-visible {
+  outline: none;
+  border-color: var(--blush);
+  box-shadow: 0 0 0 3px rgba(224, 174, 156, .3);
+}
+.counter__btn:disabled { opacity: .3; cursor: default; }
+
+.counter__value { flex: 1; text-align: center; line-height: 1.1; }
+.counter__value strong {
+  display: block;
+  font-family: var(--serif);
+  font-size: 2rem;
+  font-weight: 400;
+  color: var(--ink);
+}
+.counter__value span {
+  display: block;
+  margin-top: .1rem;
+  font-size: .6rem;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
 
 /* Button */
 .btn {
@@ -1060,61 +1126,112 @@ input:focus, select:focus, textarea:focus {
             <p class="field__error" id="e-name"></p>
           </div>
 
-          <div class="field" id="f-attending">
-            <span class="fieldset__legend">Will you be joining us? <span class="req">*</span></span>
-            <div class="choices" role="radiogroup" aria-label="Will you be joining us?">
-              <label class="choice choice--yes">
-                <input type="radio" name="attending" value="yes">
-                <span class="choice__box">
-                  <span class="choice__dot" aria-hidden="true"></span>
-                  <span class="choice__text">
-                    <strong>Yes, I'll be there</strong>
-                    <span>Joyfully accepts</span>
+          <!-- One question at a time. Each step opens itself once the step
+               above it has an answer; the script does the opening. -->
+          <div class="reveal" id="step-attending">
+            <div class="field" id="f-attending">
+              <span class="fieldset__legend">Will you be joining us? <span class="req">*</span></span>
+              <div class="choices" role="radiogroup" aria-label="Will you be joining us?">
+                <label class="choice choice--yes">
+                  <input type="radio" name="attending" value="yes">
+                  <span class="choice__box">
+                    <span class="choice__dot" aria-hidden="true"></span>
+                    <span class="choice__text">
+                      <strong>Yes, I'll be there</strong>
+                      <span>Joyfully accepts</span>
+                    </span>
+                    <span class="choice__tick" aria-hidden="true">&#10003;</span>
                   </span>
-                  <span class="choice__tick" aria-hidden="true">&#10003;</span>
-                </span>
-              </label>
+                </label>
 
-              <label class="choice choice--no">
-                <input type="radio" name="attending" value="no">
-                <span class="choice__box">
-                  <span class="choice__dot" aria-hidden="true"></span>
-                  <span class="choice__text">
-                    <strong>Sorry, I can't make it</strong>
-                    <span>Regretfully declines</span>
+                <label class="choice choice--no">
+                  <input type="radio" name="attending" value="no">
+                  <span class="choice__box">
+                    <span class="choice__dot" aria-hidden="true"></span>
+                    <span class="choice__text">
+                      <strong>Sorry, I can't make it</strong>
+                      <span>Regretfully declines</span>
+                    </span>
+                    <span class="choice__tick" aria-hidden="true">&#10003;</span>
                   </span>
-                  <span class="choice__tick" aria-hidden="true">&#10003;</span>
-                </span>
-              </label>
+                </label>
+              </div>
+              <p class="field__error" id="e-attending"></p>
             </div>
-            <p class="field__error" id="e-attending"></p>
           </div>
 
-          <div class="reveal" id="partyReveal">
+          <div class="reveal" id="step-companions">
+            <div class="field" id="f-companions">
+              <span class="fieldset__legend" id="companionsLegend">
+                Will anyone be coming with you? <span class="req">*</span>
+              </span>
+              <div class="choices" role="radiogroup" aria-labelledby="companionsLegend">
+                <label class="choice choice--yes">
+                  <input type="radio" name="companions" value="yes">
+                  <span class="choice__box">
+                    <span class="choice__dot" aria-hidden="true"></span>
+                    <span class="choice__text">
+                      <strong>Yes, I'm bringing someone</strong>
+                      <span id="companionsYesHint"></span>
+                    </span>
+                    <span class="choice__tick" aria-hidden="true">&#10003;</span>
+                  </span>
+                </label>
+
+                <label class="choice choice--no">
+                  <input type="radio" name="companions" value="no">
+                  <span class="choice__box">
+                    <span class="choice__dot" aria-hidden="true"></span>
+                    <span class="choice__text">
+                      <strong>No, just me</strong>
+                      <span>One seat</span>
+                    </span>
+                    <span class="choice__tick" aria-hidden="true">&#10003;</span>
+                  </span>
+                </label>
+              </div>
+              <p class="field__error" id="e-companions"></p>
+            </div>
+          </div>
+
+          <div class="reveal" id="step-party">
             <div class="field" id="f-partySize">
-              <label for="partySize">Number Attending <span class="req">*</span></label>
-              <select id="partySize" name="partySize"></select>
-              <span class="hint">Including yourself.</span>
+              <span class="fieldset__legend" id="companionCountLegend">
+                How many are coming with you?
+              </span>
+              <div class="counter" role="group" aria-labelledby="companionCountLegend">
+                <button type="button" class="counter__btn" id="companionMinus"
+                        aria-label="One fewer companion">&minus;</button>
+                <span class="counter__value">
+                  <strong id="companionCount">1</strong>
+                  <span id="companionCountWord">companion</span>
+                </span>
+                <button type="button" class="counter__btn" id="companionPlus"
+                        aria-label="One more companion">+</button>
+              </div>
+              <span class="hint" id="seatsHint" aria-live="polite"></span>
               <p class="field__error" id="e-partySize"></p>
             </div>
 
             <div class="field" id="f-guestNames">
-              <span class="fieldset__legend" id="guestNamesLabel">Names in Your Party</span>
+              <span class="fieldset__legend" id="guestNamesLabel">Who Is Coming With You?</span>
               <div class="guests" id="guestNameList" role="group"
                    aria-labelledby="guestNamesLabel"></div>
               <span class="hint">So we can set your place cards correctly.</span>
             </div>
           </div>
 
-          <div class="field" id="f-message">
-            <label for="message">A Message for Griffin &amp; Hazel</label>
-            <textarea id="message" name="message" maxlength="1000"
-                      placeholder="Share a wish, a blessing, or a favourite memory..."></textarea>
-            <span class="hint"><span id="msgCount">0</span> / 1000</span>
-          </div>
+          <div class="reveal" id="step-message">
+            <div class="field" id="f-message">
+              <label for="message">A Message for Griffin &amp; Hazel</label>
+              <textarea id="message" name="message" maxlength="1000"
+                        placeholder="Share a wish, a blessing, or a favourite memory..."></textarea>
+              <span class="hint"><span id="msgCount">0</span> / 1000</span>
+            </div>
 
-          <button type="submit" class="btn" id="submitBtn">Send Our Reply</button>
-          <div class="form-error" id="formError"></div>
+            <button type="submit" class="btn" id="submitBtn">Send Our Reply</button>
+            <div class="form-error" id="formError"></div>
+          </div>
         </form>
       </div>
 
@@ -1278,14 +1395,10 @@ input:focus, select:focus, textarea:focus {
       '. If you still need to reach ' + firstName(CONFIG.groom) + ' and ' +
       firstName(CONFIG.bride) + ', please message them directly.';
 
-    // Party size options
-    var select = $('partySize');
-    for (var i = 1; i <= CONFIG.maxPartySize; i++) {
-      var opt = document.createElement('option');
-      opt.value = String(i);
-      opt.textContent = i === 1 ? 'Just me' : i + ' guests';
-      select.appendChild(opt);
-    }
+    // How many companions the counter will allow
+    var most = Math.max(1, CONFIG.maxPartySize - 1);
+    $('companionsYesHint').textContent =
+      most === 1 ? 'One companion' : 'Up to ' + most + ' companions';
 
     if (!rsvpIsOpen()) {
       $('formPane').style.display = 'none';
@@ -1404,7 +1517,7 @@ input:focus, select:focus, textarea:focus {
   /* ---------------------------------------------------------------------- */
 
   function clearErrors() {
-    ['name', 'attending', 'partySize'].forEach(function (f) {
+    ['name', 'attending', 'companions', 'partySize'].forEach(function (f) {
       var wrap = $('f-' + f);
       if (wrap) { wrap.classList.remove('field--error'); }
     });
@@ -1431,20 +1544,98 @@ input:focus, select:focus, textarea:focus {
   }
 
 
-  function attendingValue() {
-    var checked = document.querySelector('input[name="attending"]:checked');
+  function checkedValue(group) {
+    var checked = document.querySelector('input[name="' + group + '"]:checked');
     return checked ? checked.value : '';
+  }
+
+  function attendingValue() { return checkedValue('attending'); }
+  function companionsValue() { return checkedValue('companions'); }
+
+
+  /* ---------------------------------------------------------------------- */
+  /*  The steps                                                             */
+  /*                                                                        */
+  /*  The form asks one thing at a time: a name, then whether they are       */
+  /*  coming, then whether anyone is coming with them, and only then how     */
+  /*  many and who. Every step is a .reveal that syncSteps() opens or closes  */
+  /*  from the answers so far, so there is no order of clicks that can leave  */
+  /*  a question stranded on the page.                                       */
+  /*                                                                        */
+  /*  A step measures itself as it opens and then releases the cap, because  */
+  /*  the party step keeps growing after it is open — its name boxes appear   */
+  /*  as the companion count goes up.                                        */
+  /* ---------------------------------------------------------------------- */
+
+  var STEP_MS = 460;          // a shade past the .45s max-height transition
+
+  function toggleStep(id, open) {
+    var el = $(id);
+    if (!el || open === el.classList.contains('is-open')) { return; }
+
+    if (open) {
+      el.style.maxHeight = el.scrollHeight + 'px';
+      el.classList.add('is-open');
+      setTimeout(function () {
+        if (el.classList.contains('is-open')) {
+          el.style.maxHeight = 'none';    // let it grow with its contents
+          el.style.overflow = 'visible';  // so focus rings are not clipped
+        }
+      }, STEP_MS);
+    } else {
+      el.style.overflow = '';
+      el.style.maxHeight = el.scrollHeight + 'px';
+      el.offsetHeight;                    // flush, so the close has somewhere to start
+      el.classList.remove('is-open');
+      el.style.maxHeight = '';
+    }
+  }
+
+  var askedAttending = false;   // once the name question is answered it stays answered
+
+  function syncSteps() {
+    var attending = attendingValue();
+    askedAttending = askedAttending || $('name').value.trim().length >= 2 || !!attending;
+
+    toggleStep('step-attending', askedAttending);
+    toggleStep('step-companions', attending === 'yes');
+    toggleStep('step-party', attending === 'yes' && companionsValue() === 'yes');
+    toggleStep('step-message', !!attending);
   }
 
 
   /* ---------------------------------------------------------------------- */
-  /*  Names in the party                                                    */
+  /*  How many, and who                                                     */
   /*                                                                        */
-  /*  One box per extra seat: choose 5 and four boxes appear, since the      */
-  /*  first seat belongs to whoever is filling the form in. Boxes that are   */
-  /*  already on the page are left alone when the count changes, so a name   */
-  /*  typed before a correction to the headcount is not thrown away.         */
+  /*  The counter holds companions rather than seats, since the guest        */
+  /*  filling the form in is already accounted for. One name box per         */
+  /*  companion. Boxes already on the page are left alone when the count     */
+  /*  changes, so a name typed before a correction is not thrown away.       */
   /* ---------------------------------------------------------------------- */
+
+  var companions = 1;
+
+  function maxCompanions() {
+    return Math.max(1, CONFIG.maxPartySize - 1);
+  }
+
+  function partySeats() {
+    return companionsValue() === 'yes' ? companions + 1 : 1;
+  }
+
+  function setCompanions(count) {
+    companions = Math.min(maxCompanions(), Math.max(1, count));
+
+    $('companionCount').textContent = String(companions);
+    $('companionCountWord').textContent = companions === 1 ? 'companion' : 'companions';
+    $('companionMinus').disabled = companions <= 1;
+    $('companionPlus').disabled = companions >= maxCompanions();
+
+    var seats = companions + 1;
+    $('seatsHint').textContent = 'That makes ' + seats + ' seats in total, including you.';
+
+    renderGuestNames();
+  }
 
   function guestNameInputs() {
     return Array.prototype.slice.call($('guestNameList').getElementsByTagName('input'));
@@ -1474,8 +1665,7 @@ input:focus, select:focus, textarea:focus {
 
   function renderGuestNames() {
     var list = $('guestNameList');
-    var seats = parseInt($('partySize').value, 10);
-    var wanted = Math.max(0, (isNaN(seats) ? 1 : seats) - 1);
+    var wanted = partySeats() - 1;
     var rows = guestNameInputs();
 
     for (var i = rows.length; i > wanted; i--) {
@@ -1497,20 +1687,36 @@ input:focus, select:focus, textarea:focus {
 
 
   function wireUp() {
-    // Show the party fields only when someone is coming
+    // The name opens the attendance question
+    $('name').addEventListener('input', syncSteps);
+
     Array.prototype.forEach.call(
       document.querySelectorAll('input[name="attending"]'),
       function (radio) {
         radio.addEventListener('change', function () {
-          $('partyReveal').classList.toggle('is-open', radio.value === 'yes');
           $('f-attending').classList.remove('field--error');
+          syncSteps();
         });
       }
     );
 
-    // A box for every seat beyond the guest's own
-    $('partySize').addEventListener('change', renderGuestNames);
-    renderGuestNames();
+    Array.prototype.forEach.call(
+      document.querySelectorAll('input[name="companions"]'),
+      function (radio) {
+        radio.addEventListener('change', function () {
+          $('f-companions').classList.remove('field--error');
+          syncSteps();
+          renderGuestNames();
+        });
+      }
+    );
+
+    $('companionMinus').addEventListener('click', function () {
+      setCompanions(companions - 1);
+    });
+    $('companionPlus').addEventListener('click', function () {
+      setCompanions(companions + 1);
+    });
 
     // Live character count on the message
     $('message').addEventListener('input', function () {
@@ -1519,6 +1725,8 @@ input:focus, select:focus, textarea:focus {
 
     $('rsvpForm').addEventListener('submit', onSubmit);
     $('againBtn').addEventListener('click', resetForm);
+
+    setCompanions(companions);
   }
 
 
@@ -1526,11 +1734,13 @@ input:focus, select:focus, textarea:focus {
     event.preventDefault();
     clearErrors();
 
+    var attending = attendingValue();
+
     var payload = {
       name: $('name').value,
-      attending: attendingValue(),
-      partySize: $('partySize').value,
-      guestNames: guestNamesValue(),
+      attending: attending,
+      partySize: String(attending === 'yes' ? partySeats() : 0),
+      guestNames: attending === 'yes' ? guestNamesValue() : '',
       message: $('message').value,
       website: $('website').value
     };
@@ -1539,8 +1749,11 @@ input:focus, select:focus, textarea:focus {
     if (payload.name.trim().length < 2) {
       return showFieldError('name', 'Please tell us your full name.');
     }
-    if (!payload.attending) {
+    if (!attending) {
       return showFieldError('attending', 'Please choose one so we know to save you a seat.');
+    }
+    if (attending === 'yes' && !companionsValue()) {
+      return showFieldError('companions', 'Please let us know if anyone is coming with you.');
     }
 
     setBusy(true);
@@ -1601,13 +1814,15 @@ input:focus, select:focus, textarea:focus {
 
 
   function resetForm() {
+    $('thanksPane').classList.remove('is-visible');
+    $('formPane').style.display = 'block';   // steps measure themselves, so show first
+
     $('rsvpForm').reset();
-    $('partyReveal').classList.remove('is-open');
-    renderGuestNames();          // reset() puts the count back to one seat
+    askedAttending = false;
+    setCompanions(1);            // also clears the name boxes back to none
+    syncSteps();
     $('msgCount').textContent = '0';
     clearErrors();
-    $('thanksPane').classList.remove('is-visible');
-    $('formPane').style.display = 'block';
     document.getElementById('rsvp').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
