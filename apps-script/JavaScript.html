@@ -121,14 +121,13 @@
       '. If you still need to reach ' + firstName(CONFIG.groom) + ' and ' +
       firstName(CONFIG.bride) + ', please message them directly.';
 
-    // Party size options
-    var select = $('partySize');
-    for (var i = 1; i <= CONFIG.maxPartySize; i++) {
-      var opt = document.createElement('option');
-      opt.value = String(i);
-      opt.textContent = i === 1 ? 'Just me' : i + ' guests';
-      select.appendChild(opt);
-    }
+    // How many companions the form will allow, in the guest's own terms
+    var most = Math.max(0, CONFIG.maxPartySize - 1);
+    $('companionsYesHint').textContent =
+      most === 1 ? 'One companion' : 'Up to ' + most + ' companions';
+    $('companionsHint').textContent =
+      'We are able to save ' + CONFIG.maxPartySize +
+      ' seats per family, yours included.';
 
     if (!rsvpIsOpen()) {
       $('formPane').style.display = 'none';
@@ -247,17 +246,27 @@
   /* ---------------------------------------------------------------------- */
 
   function clearErrors() {
-    ['name', 'attending', 'partySize'].forEach(function (f) {
+    ['name', 'attending', 'companions', 'partySize'].forEach(function (f) {
       var wrap = $('f-' + f);
       if (wrap) { wrap.classList.remove('field--error'); }
     });
     $('formError').classList.remove('is-visible');
   }
 
+  // A field the guest cannot see cannot carry the message — the counter hides
+  // itself when only one companion is allowed, and a closed step is no better.
+  function fieldIsVisible(wrap) {
+    if (!wrap || wrap.offsetParent === null) { return false; }
+    for (var el = wrap.parentNode; el && el.classList; el = el.parentNode) {
+      if (el.classList.contains('reveal')) { return el.classList.contains('is-open'); }
+    }
+    return true;
+  }
+
   function showFieldError(field, message) {
     var wrap = $('f-' + field);
     var slot = $('e-' + field);
-    if (wrap && slot) {
+    if (wrap && slot && fieldIsVisible(wrap)) {
       wrap.classList.add('field--error');
       slot.textContent = message;
       wrap.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -274,33 +283,121 @@
   }
 
 
-  function attendingValue() {
-    var checked = document.querySelector('input[name="attending"]:checked');
+  function checkedValue(group) {
+    var checked = document.querySelector('input[name="' + group + '"]:checked');
     return checked ? checked.value : '';
+  }
+
+  function attendingValue() { return checkedValue('attending'); }
+  function companionsValue() { return checkedValue('companions'); }
+
+
+  /* ---------------------------------------------------------------------- */
+  /*  The steps                                                             */
+  /*                                                                        */
+  /*  The form asks one thing at a time: a name, then whether they are       */
+  /*  coming, then whether anyone is coming with them, and only then how     */
+  /*  many and who. Every step is a .reveal that syncSteps() opens or closes  */
+  /*  from the answers so far, so there is no order of clicks that can leave  */
+  /*  a question stranded on the page.                                       */
+  /*                                                                        */
+  /*  A step measures itself as it opens and then releases the cap, because  */
+  /*  the party step keeps growing after it is open — its name boxes appear   */
+  /*  as the companion count goes up.                                        */
+  /* ---------------------------------------------------------------------- */
+
+  var STEP_MS = 460;          // a shade past the .45s max-height transition
+
+  function toggleStep(id, open) {
+    var el = $(id);
+    if (!el || open === el.classList.contains('is-open')) { return; }
+
+    if (open) {
+      el.style.maxHeight = el.scrollHeight + 'px';
+      el.classList.add('is-open');
+      setTimeout(function () {
+        if (el.classList.contains('is-open')) {
+          el.style.maxHeight = 'none';    // let it grow with its contents
+          el.style.overflow = 'visible';  // so focus rings are not clipped
+        }
+      }, STEP_MS);
+    } else {
+      el.style.overflow = '';
+      el.style.maxHeight = el.scrollHeight + 'px';
+      el.offsetHeight;                    // flush, so the close has somewhere to start
+      el.classList.remove('is-open');
+      el.style.maxHeight = '';
+    }
+  }
+
+  var askedAttending = false;   // once the name question is answered it stays answered
+
+  function syncSteps() {
+    var attending = attendingValue();
+    askedAttending = askedAttending || $('name').value.trim().length >= 2 || !!attending;
+
+    toggleStep('step-attending', askedAttending);
+    toggleStep('step-companions', attending === 'yes' && maxCompanions() > 0);
+    toggleStep('step-party', attending === 'yes' && bringingCompanions());
+    toggleStep('step-message', !!attending);
   }
 
 
   /* ---------------------------------------------------------------------- */
-  /*  Names in the party                                                    */
+  /*  How many, and who                                                     */
   /*                                                                        */
-  /*  One box per extra seat: choose 5 and four boxes appear, since the      */
-  /*  first seat belongs to whoever is filling the form in. Boxes that are   */
-  /*  already on the page are left alone when the count changes, so a name   */
-  /*  typed before a correction to the headcount is not thrown away.         */
+  /*  The counter holds companions rather than seats, since the guest        */
+  /*  filling the form in is already accounted for. One name box per         */
+  /*  companion. Boxes already on the page are left alone when the count     */
+  /*  changes, so a name typed before a correction is not thrown away.       */
   /* ---------------------------------------------------------------------- */
+
+  var companions = 1;
+
+  function maxCompanions() {
+    return Math.max(0, CONFIG.maxPartySize - 1);
+  }
+
+  // None allowed means there is no question to ask, so the step never opens.
+  function bringingCompanions() {
+    return maxCompanions() > 0 && companionsValue() === 'yes';
+  }
+
+  function partySeats() {
+    return bringingCompanions() ? companions + 1 : 1;
+  }
+
+  function setCompanions(count) {
+    companions = Math.min(Math.max(1, maxCompanions()), Math.max(1, count));
+
+    // With only one companion allowed there is nothing to count: saying yes
+    // has already said everything, so the counter stays out of the way and
+    // the step asks for the name alone.
+    $('f-partySize').style.display = maxCompanions() > 1 ? '' : 'none';
+
+    $('companionCount').textContent = String(companions);
+    $('companionCountWord').textContent = companions === 1 ? 'companion' : 'companions';
+    $('companionMinus').disabled = companions <= 1;
+    $('companionPlus').disabled = companions >= maxCompanions();
+
+    var seats = companions + 1;
+    $('seatsHint').textContent = 'That makes ' + seats + ' seats in total, including you.';
+
+    renderGuestNames();
+  }
 
   function guestNameInputs() {
     return Array.prototype.slice.call($('guestNameList').getElementsByTagName('input'));
   }
 
-  function guestNameRow(seat) {
+  function guestNameRow(seat, only) {
     var row = document.createElement('div');
     row.className = 'guest';
 
     var label = document.createElement('label');
     label.className = 'guest__label';
     label.setAttribute('for', 'guestName' + seat);
-    label.textContent = 'Guest ' + seat;
+    label.textContent = only ? 'Their name' : 'Guest ' + seat;
 
     var input = document.createElement('input');
     input.type = 'text';
@@ -317,15 +414,16 @@
 
   function renderGuestNames() {
     var list = $('guestNameList');
-    var seats = parseInt($('partySize').value, 10);
-    var wanted = Math.max(0, (isNaN(seats) ? 1 : seats) - 1);
+    var wanted = partySeats() - 1;
     var rows = guestNameInputs();
 
     for (var i = rows.length; i > wanted; i--) {
       list.removeChild(rows[i - 1].parentNode);
     }
     for (var j = rows.length; j < wanted; j++) {
-      list.appendChild(guestNameRow(j + 2));   // guest 1 is the person replying
+      // Guest 1 is the person replying, so the boxes start at 2. A lone box
+      // does not need a number to tell it apart from the others.
+      list.appendChild(guestNameRow(j + 2, maxCompanions() === 1));
     }
 
     $('f-guestNames').style.display = wanted ? '' : 'none';
@@ -340,20 +438,36 @@
 
 
   function wireUp() {
-    // Show the party fields only when someone is coming
+    // The name opens the attendance question
+    $('name').addEventListener('input', syncSteps);
+
     Array.prototype.forEach.call(
       document.querySelectorAll('input[name="attending"]'),
       function (radio) {
         radio.addEventListener('change', function () {
-          $('partyReveal').classList.toggle('is-open', radio.value === 'yes');
           $('f-attending').classList.remove('field--error');
+          syncSteps();
         });
       }
     );
 
-    // A box for every seat beyond the guest's own
-    $('partySize').addEventListener('change', renderGuestNames);
-    renderGuestNames();
+    Array.prototype.forEach.call(
+      document.querySelectorAll('input[name="companions"]'),
+      function (radio) {
+        radio.addEventListener('change', function () {
+          $('f-companions').classList.remove('field--error');
+          syncSteps();
+          renderGuestNames();
+        });
+      }
+    );
+
+    $('companionMinus').addEventListener('click', function () {
+      setCompanions(companions - 1);
+    });
+    $('companionPlus').addEventListener('click', function () {
+      setCompanions(companions + 1);
+    });
 
     // Live character count on the message
     $('message').addEventListener('input', function () {
@@ -362,6 +476,8 @@
 
     $('rsvpForm').addEventListener('submit', onSubmit);
     $('againBtn').addEventListener('click', resetForm);
+
+    setCompanions(companions);
   }
 
 
@@ -369,11 +485,13 @@
     event.preventDefault();
     clearErrors();
 
+    var attending = attendingValue();
+
     var payload = {
       name: $('name').value,
-      attending: attendingValue(),
-      partySize: $('partySize').value,
-      guestNames: guestNamesValue(),
+      attending: attending,
+      partySize: String(attending === 'yes' ? partySeats() : 0),
+      guestNames: attending === 'yes' ? guestNamesValue() : '',
       message: $('message').value,
       website: $('website').value
     };
@@ -382,8 +500,11 @@
     if (payload.name.trim().length < 2) {
       return showFieldError('name', 'Please tell us your full name.');
     }
-    if (!payload.attending) {
+    if (!attending) {
       return showFieldError('attending', 'Please choose one so we know to save you a seat.');
+    }
+    if (attending === 'yes' && maxCompanions() > 0 && !companionsValue()) {
+      return showFieldError('companions', 'Please let us know if anyone is coming with you.');
     }
 
     setBusy(true);
@@ -444,13 +565,15 @@
 
 
   function resetForm() {
+    $('thanksPane').classList.remove('is-visible');
+    $('formPane').style.display = 'block';   // steps measure themselves, so show first
+
     $('rsvpForm').reset();
-    $('partyReveal').classList.remove('is-open');
-    renderGuestNames();          // reset() puts the count back to one seat
+    askedAttending = false;
+    setCompanions(1);            // also clears the name boxes back to none
+    syncSteps();
     $('msgCount').textContent = '0';
     clearErrors();
-    $('thanksPane').classList.remove('is-visible');
-    $('formPane').style.display = 'block';
     document.getElementById('rsvp').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 

@@ -37,15 +37,25 @@ A single page built around your engagement photos:
 Everything animates in as it is scrolled to, petals drift down the background,
 and a floating button in the corner plays your song.
 
-The form collects:
+The form asks one question at a time. It opens as a single name box, and each
+answer opens the next question underneath it — decline and the party questions
+never appear at all:
 
-| Field | Required | Notes |
+| Step | Required | Notes |
 | --- | --- | --- |
-| Full name | yes | |
-| Joyfully Accepts / Regretfully Declines | yes | |
-| Number attending | when accepting | 1 – 5, configurable |
-| Names in your party | no | a box per extra seat, for place cards |
+| Full name | yes | typing it opens the next question |
+| Joyfully Accepts / Regretfully Declines | yes | declining skips straight to the message |
+| Is anyone coming with you? | when accepting | yes / no |
+| How many | when more than one companion is allowed | a tap counter |
+| Their names | no | a box each, for place cards |
 | A message for Griffin & Hazel | no | up to 1000 characters |
+
+`maxPartySize` sets the ceiling and the form shapes itself around it. At the
+current setting of 2 — two seats per family — saying yes has already said
+everything, so the counter is left out and the step simply asks for the one
+companion's name. Raise it and the counter appears, capped at `maxPartySize`
+seats with the running total shown as the guest taps. Set it to 1 and the
+companion question disappears altogether.
 
 It is open to anyone with the link, and no contact details are collected — just
 the name, the answer, and the headcount. Nothing is emailed; everything is
@@ -241,7 +251,7 @@ A few worth knowing:
 ```js
 rsvpDeadlineIso:  '2026-12-31',   // after this day the form politely closes itself
 rsvpDeadlineLabel:'December 2026',// what guests actually read
-maxPartySize:     5,              // largest number of seats one reply may claim
+maxPartySize:     2,              // largest number of seats one reply may claim
 allowEdits:       true,           // false records every reply as a new row
 
 animations:       true,           // entrance timeline and scroll reveals

@@ -40,15 +40,15 @@ check('81-char name rejected',      V({name:'x'.repeat(81), attending:'yes'}).fi
 check('missing attendance rejected',V({name:'Juan Cruz'}).field, 'attending');
 check('bogus attendance rejected',  V({name:'Juan Cruz', attending:'maybe'}).field, 'attending');
 check('party size 0 rejected',      V({name:'Juan Cruz', attending:'yes', partySize:'0'}).field, 'partySize');
-check('party size 6 rejected',      V({name:'Juan Cruz', attending:'yes', partySize:'6'}).field, 'partySize');
-check('party size 5 accepted',      V({name:'Juan Cruz', attending:'yes', partySize:'5'}).partySize, 5);
+check('party size 3 rejected',      V({name:'Juan Cruz', attending:'yes', partySize:'3'}).field, 'partySize');
+check('party size 2 accepted',      V({name:'Juan Cruz', attending:'yes', partySize:'2'}).partySize, 2);
 
 const yes = V({name:'  Juan   Dela  Cruz ',
-               attending:'yes', partySize:'3', guestNames:'A, B', message:'Congrats!'});
+               attending:'yes', partySize:'2', guestNames:'A, B', message:'Congrats!'});
 check('name whitespace collapsed',  yes.name, 'Juan Dela Cruz');
 check('contact fields dropped',     [yes.email, yes.phone], [undefined, undefined]);
 check('attending is boolean',       yes.attending, true);
-check('party size parsed',          yes.partySize, 3);
+check('party size parsed',          yes.partySize, 2);
 check('message kept',               yes.message, 'Congrats!');
 
 const no = V({name:'Maria Santos', attending:'no', partySize:'5', guestNames:'ignored', message:'Sorry!'});

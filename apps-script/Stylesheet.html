@@ -636,13 +636,79 @@ input:focus, select:focus, textarea:focus {
 /* "Please choose one" turns both cards, since neither is picked yet. */
 .field--error .choice__box { border-color: #C4705C; }
 
+/* ---- Steps -----------------------------------------------------------------
+   Each question sits in one of these and opens when the one above it has an
+   answer. The script sets max-height as it opens — a fixed cap here would clip
+   the party step, which grows a name box per companion after it is open. */
+
 .reveal {
   max-height: 0;
   opacity: 0;
   overflow: hidden;
   transition: max-height .45s ease, opacity .35s ease;
 }
-.reveal.is-open { max-height: 620px; opacity: 1; }
+.reveal.is-open { opacity: 1; }
+
+/* ---- Companion counter -----------------------------------------------------
+   Tapping is easier than typing on a phone, and the two buttons cannot produce
+   a number the sheet would reject. They disable themselves at either end. */
+
+.counter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.1rem;
+  max-width: 15rem;
+  padding: .5rem .6rem;
+  border: 1px solid var(--sand);
+  border-radius: 3px;
+  background: var(--cream);
+}
+
+.counter__btn {
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  font-family: var(--sans);
+  font-size: 1.35rem;
+  line-height: 1;
+  color: var(--ink);
+  background: var(--white);
+  border: 1px solid var(--sand-deep);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: border-color .2s ease, color .2s ease,
+              background .2s ease, transform .2s ease;
+}
+.counter__btn:hover:not(:disabled) {
+  border-color: var(--blush);
+  color: var(--blush-deep);
+  transform: translateY(-1px);
+}
+.counter__btn:active:not(:disabled) { transform: none; }
+.counter__btn:focus-visible {
+  outline: none;
+  border-color: var(--blush);
+  box-shadow: 0 0 0 3px rgba(224, 174, 156, .3);
+}
+.counter__btn:disabled { opacity: .3; cursor: default; }
+
+.counter__value { flex: 1; text-align: center; line-height: 1.1; }
+.counter__value strong {
+  display: block;
+  font-family: var(--serif);
+  font-size: 2rem;
+  font-weight: 400;
+  color: var(--ink);
+}
+.counter__value span {
+  display: block;
+  margin-top: .1rem;
+  font-size: .6rem;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
 
 /* Button */
 .btn {
