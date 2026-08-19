@@ -41,13 +41,17 @@
     "title": "The Ceremony",
     "venue": "Our Lady of the Most Holy Rosary Cathedral Parish",
     "city": "Dipolog City",
-    "time": ""
+    "time": "",
+    "address": "",
+    "map": ""
   },
   "reception": {
     "title": "The Reception",
     "venue": "Ariana Hotel",
     "city": "Dipolog City",
-    "time": "Reception to follow"
+    "time": "Reception to follow",
+    "address": "Airport Road, Minaog, Dipolog City",
+    "map": "https://maps.app.goo.gl/s5ss1MFsLZ4jk9xd8"
   },
   "rsvpDeadlineIso": "2026-12-31",
   "rsvpDeadlineLabel": "December 2026",
@@ -487,6 +491,35 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 300; margin: 0; letter-spac
   color: var(--ink-soft);
   margin-top: .7rem;
 }
+
+.card__address {
+  font-size: .92rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  margin-top: .45rem;
+}
+
+/* Getting there matters more than it looks: most guests open this on a phone
+   on the day itself. The link is quiet until it is wanted. */
+.card__map {
+  display: inline-block;
+  margin-top: .9rem;
+  font-size: .68rem;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--blush-deep);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(224, 174, 156, .5);
+  padding-bottom: .15rem;
+  transition: color .2s ease, border-color .2s ease;
+}
+.card__map:hover,
+.card__map:focus-visible {
+  color: var(--ink);
+  border-color: var(--sand-deep);
+  outline: none;
+}
+.card__map[hidden] { display: none; }
 
 /* The room card carries prose and two tappable links, which the venue cards
    do not. Numbers stay in the serif so they read as part of the invitation
@@ -1122,13 +1155,19 @@ input:focus, select:focus, textarea:focus {
         <div class="card" data-reveal>
           <div class="card__label" id="ceremonyTitle"></div>
           <div class="card__venue" id="ceremonyVenue"></div>
+          <div class="card__address" id="ceremonyAddress"></div>
           <div class="card__meta" id="ceremonyMeta"></div>
+          <a class="card__map" id="ceremonyMap" target="_blank"
+             rel="noopener noreferrer" hidden>View on map &#8250;</a>
         </div>
 
         <div class="card" data-reveal>
           <div class="card__label" id="receptionTitle"></div>
           <div class="card__venue" id="receptionVenue"></div>
+          <div class="card__address" id="receptionAddress"></div>
           <div class="card__meta" id="receptionMeta"></div>
+          <a class="card__map" id="receptionMap" target="_blank"
+             rel="noopener noreferrer" hidden>View on map &#8250;</a>
         </div>
 
         <!-- Rooms at the reception venue. Built by the script, and taken off
@@ -1421,15 +1460,8 @@ input:focus, select:focus, textarea:focus {
     $('heroDate').textContent =
       CONFIG.weddingDateLong + ' · ' + CONFIG.ceremony.city;
 
-    $('ceremonyTitle').textContent = CONFIG.ceremony.title;
-    $('ceremonyVenue').textContent = CONFIG.ceremony.venue;
-    $('ceremonyMeta').textContent =
-      [CONFIG.ceremony.time, CONFIG.ceremony.city].filter(Boolean).join(' · ');
-
-    $('receptionTitle').textContent = CONFIG.reception.title;
-    $('receptionVenue').textContent = CONFIG.reception.venue;
-    $('receptionMeta').textContent =
-      [CONFIG.reception.time, CONFIG.reception.city].filter(Boolean).join(' · ');
+    renderVenue('ceremony', CONFIG.ceremony);
+    renderVenue('reception', CONFIG.reception);
 
     renderStay();
 
@@ -1461,6 +1493,31 @@ input:focus, select:focus, textarea:focus {
     }
 
     renderCountdown();
+  }
+
+
+  /* ---------------------------------------------------------------------- */
+  /*  The venue cards                                                       */
+  /*                                                                        */
+  /*  An address and a map link are both optional, so the same card serves a */
+  /*  venue everybody can already find and one nobody can. Where there is an */
+  /*  address it carries the location, and the line below it keeps to the    */
+  /*  time rather than repeating the city.                                   */
+  /* ---------------------------------------------------------------------- */
+
+  function renderVenue(id, venue) {
+    $(id + 'Title').textContent = venue.title;
+    $(id + 'Venue').textContent = venue.venue;
+    $(id + 'Address').textContent = venue.address || '';
+    $(id + 'Meta').textContent = (venue.address ? [venue.time] : [venue.time, venue.city])
+      .filter(Boolean).join(' · ');
+
+    var map = $(id + 'Map');
+    if (venue.map) {
+      map.href = venue.map;
+      map.setAttribute('aria-label', 'Open ' + venue.venue + ' in Google Maps');
+      map.hidden = false;
+    }
   }
 
 

@@ -90,6 +90,41 @@ def read(name):
         return fh.read()
 
 
+def strip_comments(text):
+    """
+    Drops // comments, leaving the // inside a string alone.
+
+    A regex cannot tell the two apart, and a config that cannot hold a URL is
+    no use to anyone — a map link is exactly the sort of thing that belongs in
+    Config.gs.
+    """
+    out = []
+    quote = None
+    i = 0
+    while i < len(text):
+        ch = text[i]
+        if quote:
+            out.append(ch)
+            if ch == "\\" and i + 1 < len(text):      # an escape and whatever it escapes
+                out.append(text[i + 1])
+                i += 2
+                continue
+            if ch == quote:
+                quote = None
+            i += 1
+        elif ch in "'\"":
+            quote = ch
+            out.append(ch)
+            i += 1
+        elif text[i:i + 2] == "//":
+            while i < len(text) and text[i] != "\n":
+                i += 1
+        else:
+            out.append(ch)
+            i += 1
+    return "".join(out)
+
+
 def parse_config():
     """Pulls the CONFIG object literal out of Config.gs without running it."""
     text = read("Config.gs")
@@ -97,8 +132,7 @@ def parse_config():
     if not match:
         sys.exit("Could not find the CONFIG literal in Config.gs")
 
-    body = match.group(1).rstrip(";")
-    body = re.sub(r"//[^\n]*", "", body)                              # comments
+    body = strip_comments(match.group(1).rstrip(";"))
     body = re.sub(r"'((?:[^'\\]|\\.)*)'", r'"\1"', body)              # quotes
     body = re.sub(r"([{,]\s*)([A-Za-z_]\w*)\s*:", r'\1"\2":', body)   # keys
     body = re.sub(r",(\s*[}\]])", r"\1", body)                        # dangling commas
