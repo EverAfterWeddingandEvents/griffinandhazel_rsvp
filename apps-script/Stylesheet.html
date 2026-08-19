@@ -387,6 +387,37 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 300; margin: 0; letter-spac
   margin-top: .7rem;
 }
 
+/* The room card carries prose and two tappable links, which the venue cards
+   do not. Numbers stay in the serif so they read as part of the invitation
+   rather than as a web form. */
+
+.card__note {
+  font-size: .95rem;
+  line-height: 1.7;
+  color: var(--ink-soft);
+  margin: .6rem 0 0;
+}
+
+.card__contact { display: grid; justify-items: start; gap: .35rem; margin-top: 1rem; }
+
+.card__contact-link {
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  color: var(--ink);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  border-bottom: 1px solid rgba(214, 194, 168, .9);
+  padding-bottom: .12rem;
+  transition: color .2s ease, border-color .2s ease;
+}
+.card__contact-link--email { font-size: 1rem; }
+.card__contact-link:hover,
+.card__contact-link:focus-visible {
+  color: var(--blush-deep);
+  border-color: var(--blush);
+  outline: none;
+}
+
 .photo-frame {
   position: relative;
   padding: 12px;

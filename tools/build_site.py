@@ -46,6 +46,7 @@ PUBLIC_KEYS = (
     "groom", "bride", "monogram", "weddingDateIso", "weddingDateLong",
     "weddingYear", "weddingDateShort", "ceremony", "reception",
     "rsvpDeadlineIso", "rsvpDeadlineLabel", "maxPartySize",
+    "accommodation",
     "invitationLine", "requestLine", "closingNote",
     "animations", "petals", "petalCount", "music",
 )

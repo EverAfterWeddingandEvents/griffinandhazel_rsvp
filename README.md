@@ -30,7 +30,8 @@ A single page built around your engagement photos:
 
 1. **Hero** — the beach portrait, a monogram medallion, your names, the date, and
    a countdown that counts itself up ("268 days until we say I do").
-2. **The Celebration** — ceremony and reception cards beside the walking photo.
+2. **The Celebration** — ceremony, reception, and a rooms-at-the-hotel card
+   beside the walking photo.
 3. **Kindly Reply** — the form itself.
 4. A handwritten-feeling thank-you screen.
 
@@ -254,6 +255,14 @@ rsvpDeadlineLabel:'December 2026',// what guests actually read
 maxPartySize:     2,              // largest number of seats one reply may claim
 allowEdits:       true,           // false records every reply as a new row
 
+accommodation: {                  // the "Staying the Night" card, beside the venues
+  enabled:        true,           // false takes the card off the page entirely
+  title:          'Staying the Night',
+  note:           'A few rooms are available at Ariana Hotel...',
+  phones:         ['0998-951-7476', '0917-535-9011'],
+  email:          'arianahotel.frontdesk@gmail.com'
+},
+
 animations:       true,           // entrance timeline and scroll reveals
 petals:           true,           // drifting petals
 petalCount:       14,
@@ -264,6 +273,12 @@ music: {
   startOnFirstTap: true           // see "The music" below
 }
 ```
+
+The rooms card takes no bookings — it hands the guest the front desk's numbers
+and email as tap-to-dial and tap-to-write links, since most of them are reading
+this on a phone. Local numbers written `09…` are dialled as `+63…` so they work
+from abroad too. Keep every value on one line: `build_site.py` reads this file
+as a literal, and a string split over two lines with `+` will fail the build.
 
 All three of `animations`, `petals` and `music` are skipped automatically for
 guests whose device asks for reduced motion.
