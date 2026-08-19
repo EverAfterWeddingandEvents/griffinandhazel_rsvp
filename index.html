@@ -52,6 +52,16 @@
   "rsvpDeadlineIso": "2026-12-31",
   "rsvpDeadlineLabel": "December 2026",
   "maxPartySize": 2,
+  "accommodation": {
+    "enabled": true,
+    "title": "Staying the Night",
+    "note": "A few rooms are available at Ariana Hotel. To reserve one, please contact the front desk directly.",
+    "phones": [
+      "0998-951-7476",
+      "0917-535-9011"
+    ],
+    "email": "arianahotel.frontdesk@gmail.com"
+  },
   "invitationLine": "Together with their families",
   "requestLine": "request the honour of your presence",
   "closingNote": "We cannot wait to celebrate with you.",
@@ -476,6 +486,37 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 300; margin: 0; letter-spac
   text-transform: uppercase;
   color: var(--ink-soft);
   margin-top: .7rem;
+}
+
+/* The room card carries prose and two tappable links, which the venue cards
+   do not. Numbers stay in the serif so they read as part of the invitation
+   rather than as a web form. */
+
+.card__note {
+  font-size: .95rem;
+  line-height: 1.7;
+  color: var(--ink-soft);
+  margin: .6rem 0 0;
+}
+
+.card__contact { display: grid; justify-items: start; gap: .35rem; margin-top: 1rem; }
+
+.card__contact-link {
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  color: var(--ink);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  border-bottom: 1px solid rgba(214, 194, 168, .9);
+  padding-bottom: .12rem;
+  transition: color .2s ease, border-color .2s ease;
+}
+.card__contact-link--email { font-size: 1rem; }
+.card__contact-link:hover,
+.card__contact-link:focus-visible {
+  color: var(--blush-deep);
+  border-color: var(--blush);
+  outline: none;
 }
 
 .photo-frame {
@@ -1089,6 +1130,14 @@ input:focus, select:focus, textarea:focus {
           <div class="card__venue" id="receptionVenue"></div>
           <div class="card__meta" id="receptionMeta"></div>
         </div>
+
+        <!-- Rooms at the reception venue. Built by the script, and taken off
+             the page altogether when the couple turn it off. -->
+        <div class="card" id="stayCard" data-reveal hidden>
+          <div class="card__label" id="stayTitle"></div>
+          <p class="card__note" id="stayNote"></p>
+          <div class="card__contact" id="stayContact"></div>
+        </div>
       </div>
 
       <figure class="photo-frame" data-reveal>
@@ -1382,6 +1431,8 @@ input:focus, select:focus, textarea:focus {
     $('receptionMeta').textContent =
       [CONFIG.reception.time, CONFIG.reception.city].filter(Boolean).join(' · ');
 
+    renderStay();
+
     $('closingNote').textContent = CONFIG.closingNote;
     $('requestLine').textContent =
       CONFIG.groom + ' and ' + CONFIG.bride + ' ' + CONFIG.requestLine + '.';
@@ -1410,6 +1461,57 @@ input:focus, select:focus, textarea:focus {
     }
 
     renderCountdown();
+  }
+
+
+  /* ---------------------------------------------------------------------- */
+  /*  Rooms at the reception venue                                          */
+  /*                                                                        */
+  /*  The couple are not taking bookings — the front desk is. So this is a   */
+  /*  card that hands over a number and an address, tap to dial or write,    */
+  /*  since most guests read this on a phone.                                */
+  /* ---------------------------------------------------------------------- */
+
+  function telHref(number) {
+    var digits = String(number).replace(/[^\d]/g, '');
+    // A local mobile starts 09…; in +63 form it dials from here or abroad.
+    return 'tel:' + (digits.charAt(0) === '0' ? '+63' + digits.slice(1) : digits);
+  }
+
+  function contactLink(href, label) {
+    var link = document.createElement('a');
+    link.className = 'card__contact-link';
+    link.href = href;
+    link.textContent = label;
+    return link;
+  }
+
+  function renderStay() {
+    var stay = CONFIG.accommodation;
+    var card = $('stayCard');
+    if (!card) { return; }
+
+    // Turned off, so take it off the page rather than leaving it hidden —
+    // the entrance animation would otherwise still hold a slot for it.
+    if (!stay || !stay.enabled) {
+      card.parentNode.removeChild(card);
+      return;
+    }
+
+    $('stayTitle').textContent = stay.title;
+    $('stayNote').textContent = stay.note;
+
+    var contact = $('stayContact');
+    (stay.phones || []).forEach(function (number) {
+      contact.appendChild(contactLink(telHref(number), number));
+    });
+    if (stay.email) {
+      var email = contactLink('mailto:' + stay.email, stay.email);
+      email.className += ' card__contact-link--email';
+      contact.appendChild(email);
+    }
+
+    card.hidden = false;
   }
 
 

@@ -34,6 +34,19 @@ var CONFIG = {
     time: 'Reception to follow'
   },
 
+  // ---- Where to stay --------------------------------------------------------
+  // A few rooms are held at the reception venue. The site does not take
+  // bookings itself — it points guests at the front desk, who do. Set enabled
+  // to false and the card disappears from the page entirely.
+  accommodation: {
+    enabled: true,
+    title: 'Staying the Night',
+    // One line, no + concatenation: build_site.py reads this file as a literal.
+    note: 'A few rooms are available at Ariana Hotel. To reserve one, please contact the front desk directly.',
+    phones: ['0998-951-7476', '0917-535-9011'],
+    email: 'arianahotel.frontdesk@gmail.com'
+  },
+
   // ---- RSVP deadline --------------------------------------------------------
   // rsvpDeadlineIso is the real cut-off. After the end of this day the form
   // closes itself and shows a polite "RSVPs have closed" message instead.
@@ -93,6 +106,7 @@ function getPublicConfig_() {
     reception: CONFIG.reception,
     rsvpDeadlineIso: CONFIG.rsvpDeadlineIso,
     rsvpDeadlineLabel: CONFIG.rsvpDeadlineLabel,
+    accommodation: CONFIG.accommodation,
     maxPartySize: CONFIG.maxPartySize,
     animations: CONFIG.animations,
     petals: CONFIG.petals,

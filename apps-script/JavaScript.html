@@ -107,6 +107,8 @@
     $('receptionMeta').textContent =
       [CONFIG.reception.time, CONFIG.reception.city].filter(Boolean).join(' · ');
 
+    renderStay();
+
     $('closingNote').textContent = CONFIG.closingNote;
     $('requestLine').textContent =
       CONFIG.groom + ' and ' + CONFIG.bride + ' ' + CONFIG.requestLine + '.';
@@ -135,6 +137,57 @@
     }
 
     renderCountdown();
+  }
+
+
+  /* ---------------------------------------------------------------------- */
+  /*  Rooms at the reception venue                                          */
+  /*                                                                        */
+  /*  The couple are not taking bookings — the front desk is. So this is a   */
+  /*  card that hands over a number and an address, tap to dial or write,    */
+  /*  since most guests read this on a phone.                                */
+  /* ---------------------------------------------------------------------- */
+
+  function telHref(number) {
+    var digits = String(number).replace(/[^\d]/g, '');
+    // A local mobile starts 09…; in +63 form it dials from here or abroad.
+    return 'tel:' + (digits.charAt(0) === '0' ? '+63' + digits.slice(1) : digits);
+  }
+
+  function contactLink(href, label) {
+    var link = document.createElement('a');
+    link.className = 'card__contact-link';
+    link.href = href;
+    link.textContent = label;
+    return link;
+  }
+
+  function renderStay() {
+    var stay = CONFIG.accommodation;
+    var card = $('stayCard');
+    if (!card) { return; }
+
+    // Turned off, so take it off the page rather than leaving it hidden —
+    // the entrance animation would otherwise still hold a slot for it.
+    if (!stay || !stay.enabled) {
+      card.parentNode.removeChild(card);
+      return;
+    }
+
+    $('stayTitle').textContent = stay.title;
+    $('stayNote').textContent = stay.note;
+
+    var contact = $('stayContact');
+    (stay.phones || []).forEach(function (number) {
+      contact.appendChild(contactLink(telHref(number), number));
+    });
+    if (stay.email) {
+      var email = contactLink('mailto:' + stay.email, stay.email);
+      email.className += ' card__contact-link--email';
+      contact.appendChild(email);
+    }
+
+    card.hidden = false;
   }
 
 
