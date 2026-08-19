@@ -257,7 +257,7 @@ allowEdits:       true,           // false records every reply as a new row
 
 ceremony / reception: {           // address and map are both optional
   address:        'Airport Road, Minaog, Dipolog City',
-  map:            'https://maps.app.goo.gl/…'   // paste the Google Maps share link
+  map:            'https://www.google.com/maps/search/?api=1&query=…'
 },
 
 accommodation: {                  // the "Staying the Night" card, beside the venues
@@ -281,7 +281,16 @@ music: {
 
 Give a venue an `address` and it prints under the venue name, with the city
 moving out of the line below rather than being said twice. Give it a `map` and
-the card grows a *View on map* link that opens in a new tab. Leave either empty
+the card grows a *View on map* link that opens in a new tab.
+
+**Use a full `google.com/maps/...` URL, not the `maps.app.goo.gl` short link**
+that the Maps share sheet hands you. The short link is resolved by Google's
+app-handoff service, which replies *"Google Maps can't open this link"* when a
+browser opens it in a new tab — Safari and every in-app browser (Messenger,
+Instagram) do exactly that, which is where most guests will be. The long form
+opens the Maps app when it is installed and the website when it is not. To get
+one: open the place in Maps on a computer and copy the address bar, or open the
+short link in a browser and copy where it lands. Leave either empty
 and that part simply does not appear — which is how the ceremony card reads
 today, until someone sends a pin for the cathedral.
 
