@@ -24,8 +24,13 @@ var CONFIG = {
   //
   // address and map are both optional. Give a venue an address and it prints
   // under the name, with the city moving out of the line below it. Give it a
-  // map link and the card grows a "View on map" link — paste the share link
-  // straight from Google Maps.
+  // map link and the card grows a "View on map" link.
+  //
+  // Use a full https://www.google.com/maps/... link, NOT the maps.app.goo.gl
+  // short link the share sheet offers. The short one leans on Google's
+  // app-handoff resolver, which answers "Google Maps can't open this link"
+  // when a browser opens it in a fresh tab — which is exactly how this card
+  // opens it, and how Messenger opens everything.
   ceremony: {
     title: 'The Ceremony',
     venue: 'Our Lady of the Most Holy Rosary Cathedral Parish',
@@ -40,7 +45,7 @@ var CONFIG = {
     city: 'Dipolog City',
     time: 'Reception to follow',
     address: 'Airport Road, Minaog, Dipolog City',
-    map: 'https://maps.app.goo.gl/s5ss1MFsLZ4jk9xd8'
+    map: 'https://www.google.com/maps/search/?api=1&query=Ariana+Hotel+Airport+Road+Minaog+Dipolog+City'
   },
 
   // ---- Where to stay --------------------------------------------------------
