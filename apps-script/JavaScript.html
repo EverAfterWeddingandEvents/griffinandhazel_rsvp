@@ -97,15 +97,8 @@
     $('heroDate').textContent =
       CONFIG.weddingDateLong + ' · ' + CONFIG.ceremony.city;
 
-    $('ceremonyTitle').textContent = CONFIG.ceremony.title;
-    $('ceremonyVenue').textContent = CONFIG.ceremony.venue;
-    $('ceremonyMeta').textContent =
-      [CONFIG.ceremony.time, CONFIG.ceremony.city].filter(Boolean).join(' · ');
-
-    $('receptionTitle').textContent = CONFIG.reception.title;
-    $('receptionVenue').textContent = CONFIG.reception.venue;
-    $('receptionMeta').textContent =
-      [CONFIG.reception.time, CONFIG.reception.city].filter(Boolean).join(' · ');
+    renderVenue('ceremony', CONFIG.ceremony);
+    renderVenue('reception', CONFIG.reception);
 
     renderStay();
 
@@ -137,6 +130,31 @@
     }
 
     renderCountdown();
+  }
+
+
+  /* ---------------------------------------------------------------------- */
+  /*  The venue cards                                                       */
+  /*                                                                        */
+  /*  An address and a map link are both optional, so the same card serves a */
+  /*  venue everybody can already find and one nobody can. Where there is an */
+  /*  address it carries the location, and the line below it keeps to the    */
+  /*  time rather than repeating the city.                                   */
+  /* ---------------------------------------------------------------------- */
+
+  function renderVenue(id, venue) {
+    $(id + 'Title').textContent = venue.title;
+    $(id + 'Venue').textContent = venue.venue;
+    $(id + 'Address').textContent = venue.address || '';
+    $(id + 'Meta').textContent = (venue.address ? [venue.time] : [venue.time, venue.city])
+      .filter(Boolean).join(' · ');
+
+    var map = $(id + 'Map');
+    if (venue.map) {
+      map.href = venue.map;
+      map.setAttribute('aria-label', 'Open ' + venue.venue + ' in Google Maps');
+      map.hidden = false;
+    }
   }
 
 

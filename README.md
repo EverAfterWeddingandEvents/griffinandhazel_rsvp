@@ -255,6 +255,11 @@ rsvpDeadlineLabel:'December 2026',// what guests actually read
 maxPartySize:     2,              // largest number of seats one reply may claim
 allowEdits:       true,           // false records every reply as a new row
 
+ceremony / reception: {           // address and map are both optional
+  address:        'Airport Road, Minaog, Dipolog City',
+  map:            'https://maps.app.goo.gl/…'   // paste the Google Maps share link
+},
+
 accommodation: {                  // the "Staying the Night" card, beside the venues
   enabled:        true,           // false takes the card off the page entirely
   title:          'Staying the Night',
@@ -273,6 +278,12 @@ music: {
   startOnFirstTap: true           // see "The music" below
 }
 ```
+
+Give a venue an `address` and it prints under the venue name, with the city
+moving out of the line below rather than being said twice. Give it a `map` and
+the card grows a *View on map* link that opens in a new tab. Leave either empty
+and that part simply does not appear — which is how the ceremony card reads
+today, until someone sends a pin for the cathedral.
 
 The rooms card takes no bookings — it hands the guest the front desk's numbers
 and email as tap-to-dial and tap-to-write links, since most of them are reading

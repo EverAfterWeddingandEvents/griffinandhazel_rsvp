@@ -21,17 +21,26 @@ var CONFIG = {
 
   // ---- Ceremony & reception -------------------------------------------------
   // Leave a time as '' (empty) and it simply will not be displayed.
+  //
+  // address and map are both optional. Give a venue an address and it prints
+  // under the name, with the city moving out of the line below it. Give it a
+  // map link and the card grows a "View on map" link — paste the share link
+  // straight from Google Maps.
   ceremony: {
     title: 'The Ceremony',
     venue: 'Our Lady of the Most Holy Rosary Cathedral Parish',
     city: 'Dipolog City',
-    time: ''
+    time: '',
+    address: '',
+    map: ''
   },
   reception: {
     title: 'The Reception',
     venue: 'Ariana Hotel',
     city: 'Dipolog City',
-    time: 'Reception to follow'
+    time: 'Reception to follow',
+    address: 'Airport Road, Minaog, Dipolog City',
+    map: 'https://maps.app.goo.gl/s5ss1MFsLZ4jk9xd8'
   },
 
   // ---- Where to stay --------------------------------------------------------
